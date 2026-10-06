@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/useUserStore";
 import { Crown, Star, BookOpen, MessageCircle, PawPrint, Utensils, Trophy, Lock } from "lucide-react";
 
 export type SkillStatus = "completed" | "active" | "locked";
@@ -38,10 +39,33 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
   const progressFraction = totalLessons > 0 ? Math.min(1, Math.max(0, progress / totalLessons)) : 0;
   const strokeDashoffset = circumference - progressFraction * circumference;
 
+  const { hearts, setIsHeartsModalOpen } = useUserStore();
+
+  const [showLockedTooltip, setShowLockedTooltip] = React.useState(false);
+
   const handleClick = () => {
-    if (isLocked) return;
+    if (isLocked) {
+      setShowLockedTooltip(true);
+      return;
+    }
+
+    // If hearts are at 0 and user attempts to start/resume lesson, show out of hearts popup
+    if (hearts <= 0) {
+      setIsHeartsModalOpen(true);
+      return;
+    }
+
     router.push("/lesson");
   };
+
+  // Auto-dismiss tooltip after 3 seconds or on outside click
+  React.useEffect(() => {
+    if (!showLockedTooltip) return;
+    const timer = setTimeout(() => {
+      setShowLockedTooltip(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [showLockedTooltip]);
 
   // Render appropriate inner icon
   const renderIcon = () => {
@@ -67,17 +91,13 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
 
   return (
     <div className={`relative flex flex-col items-center select-none ${className}`}>
-      {/* Floating Crown Badge for Completed or Active skills */}
-      {(isCompleted || isActive) && (
+      {/* Floating Crown Badge for Completed skills: static golden glow right next to skill */}
+      {isCompleted && (
         <div
-          className={`absolute -top-3 right-0 z-10 p-1.5 rounded-full shadow-md border-2 ${
-            isCompleted
-              ? "bg-[#FFC800] border-[#e5a800] text-white animate-pulse"
-              : "bg-[#FFC800] border-[#e5a800] text-white"
-          }`}
-          title={isCompleted ? "Skill Mastered!" : "In Progress"}
+          className="absolute -top-2 -right-2 z-10 p-2 rounded-full shadow-[0_0_15px_rgba(255,200,0,0.85)] border-2 bg-gradient-to-tr from-[#FFB800] to-[#FFE169] border-[#FFFFFF] text-white"
+          title="Skill Mastered!"
         >
-          <Crown className="w-4 h-4 fill-white" />
+          <Crown className="w-5 h-5 fill-white filter drop-shadow-sm" />
         </div>
       )}
 
@@ -117,28 +137,27 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
         {/* Circular 3D Button */}
         <button
           onClick={handleClick}
-          disabled={isLocked}
           aria-label={`${name} - ${status}`}
           className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-100 ease-out cursor-pointer ${
             isCompleted
               ? "bg-[#58CC02] text-white border-b-6 border-[#46a302] active:translate-y-1.5 active:border-b-0 hover:brightness-105 shadow-md"
               : isActive
               ? "bg-[#58CC02] text-white border-b-6 border-[#46a302] active:translate-y-1.5 active:border-b-0 hover:brightness-105 shadow-md"
-              : "bg-[#e5e5e5] text-[#afafaf] border-b-6 border-[#cecece] cursor-not-allowed opacity-90"
+              : "bg-[#e5e5e5] text-[#afafaf] border-b-6 border-[#cecece] hover:brightness-95 active:translate-y-1 active:border-b-4 opacity-95"
           }`}
         >
           {renderIcon()}
         </button>
-      </div>
 
-      {/* Skill Label */}
-      <span
-        className={`mt-2 font-black text-sm uppercase tracking-wider text-center max-w-28 leading-tight ${
-          isLocked ? "text-[#afafaf]" : "text-[#4B4B4B]"
-        }`}
-      >
-        {name}
-      </span>
+        {/* Locked Click Tooltip Popover */}
+        {showLockedTooltip && isLocked && (
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-30 bg-[#4B4B4B] text-white text-xs font-black py-2.5 px-4 rounded-2xl shadow-xl whitespace-nowrap animate-bounce flex items-center gap-1.5 border-2 border-[#333333]">
+            <span>Clear the levels above to unlock this level</span>
+            {/* Downward triangle pointer */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#4B4B4B]" />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

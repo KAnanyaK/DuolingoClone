@@ -6,24 +6,19 @@ import { useUserStore } from "@/store/useUserStore";
 import { Check, X, Volume2, Heart } from "lucide-react";
 import { OutOfHeartsModal } from "./OutOfHeartsModal";
 
-export interface OptionItem {
-  id: number;
-  text: string;
-}
-
-export interface MultipleChoiceExerciseData {
+export interface FillInBlankExerciseData {
   id: number;
   type: string;
   prompt: string;
-  question: string;
+  sentence: string; // e.g. "Der ___ frisst den Apfel."
   answer_data: {
-    options: OptionItem[];
-    correct_option_id: number;
+    word_bank: string[];
+    correct_answer: string;
   };
 }
 
-export interface MultipleChoiceExerciseProps {
-  exercise: MultipleChoiceExerciseData;
+export interface FillInBlankExerciseProps {
+  exercise: FillInBlankExerciseData;
   progressPercent?: number;
   targetProgressPercent?: number;
   isReview?: boolean;
@@ -32,10 +27,10 @@ export interface MultipleChoiceExerciseProps {
   onExit?: () => void;
 }
 
-export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
+export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
   exercise,
-  progressPercent = 20,
-  targetProgressPercent = 40,
+  progressPercent = 40,
+  targetProgressPercent = 60,
   isReview = false,
   onComplete,
   onSkip,
@@ -43,23 +38,33 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
 }) => {
   const { hearts, decrementHearts, addXp } = useUserStore();
 
-  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "correct" | "incorrect" | "skipped">("idle");
   const [progress, setProgress] = useState<number>(progressPercent);
 
-  const correctOption = exercise.answer_data.options.find(
-    (opt) => opt.id === exercise.answer_data.correct_option_id
-  );
+  // Split sentence at the "___" blank marker
+  const parts = exercise.sentence.split("___");
+  const prefix = parts[0] || "";
+  const suffix = parts[1] || "";
 
-  const handleSelect = (id: number) => {
+  const handleSelectWord = (word: string) => {
     if (status !== "idle" || hearts <= 0) return;
-    setSelectedOptionId(id);
+    // Clicking word chip moves it to the blank slot
+    setSelectedWord(word);
+  };
+
+  const handleUnselectWord = () => {
+    if (status !== "idle") return;
+    // Clicking the filled slot returns it to the bank
+    setSelectedWord(null);
   };
 
   const handleCheck = () => {
-    if (selectedOptionId === null) return;
+    if (!selectedWord) return;
 
-    if (selectedOptionId === exercise.answer_data.correct_option_id) {
+    const isMatch = selectedWord.trim().toLowerCase() === exercise.answer_data.correct_answer.trim().toLowerCase();
+
+    if (isMatch) {
       setStatus("correct");
       setProgress(targetProgressPercent);
       addXp(10);
@@ -77,17 +82,11 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
 
   const handleContinue = () => {
     if (status === "correct") {
-      if (onComplete) {
-        onComplete();
-      } else {
-        setStatus("idle");
-      }
+      if (onComplete) onComplete();
+      else setStatus("idle");
     } else if (status === "skipped") {
-      if (onSkip) {
-        onSkip();
-      } else if (onComplete) {
-        onComplete();
-      }
+      if (onSkip) onSkip();
+      else if (onComplete) onComplete();
     } else if (status === "incorrect") {
       setStatus("idle");
     }
@@ -95,9 +94,8 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-white font-nunito select-none">
-      {/* Top Header with Progress Bar & Hearts */}
+      {/* Top Header */}
       <div className="max-w-4xl w-full mx-auto px-4 sm:px-8 pt-6 pb-4 flex items-center gap-4 sm:gap-6">
-        {/* Close Button */}
         <button
           onClick={onExit}
           className="text-[#afafaf] hover:text-[#4b4b4b] p-1.5 transition-colors cursor-pointer"
@@ -106,7 +104,7 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
           <X className="w-6 h-6 stroke-[3]" />
         </button>
 
-        {/* Lesson Progress Bar */}
+        {/* Progress Bar */}
         <div className="flex-1 h-4 bg-[#e5e5e5] rounded-full overflow-hidden p-0.5">
           <div
             className="h-full bg-[#58CC02] rounded-full transition-all duration-500 ease-out relative"
@@ -116,70 +114,72 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
           </div>
         </div>
 
-        {/* Hearts Indicator */}
+        {/* Hearts */}
         <div className="flex items-center gap-1.5 font-black text-[#FF4B4B]">
           <Heart className="w-6 h-6 fill-[#FF4B4B]" />
           <span className="text-lg">{hearts}</span>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col">
-        {/* Exercise Prompt Title */}
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-4">
+      {/* Main Content */}
+      <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-8">
           {isReview && <span className="text-[#1CB0F6]">Give it a try: </span>}
           {exercise.prompt}
         </h1>
 
-        {/* Question Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            className="text-[#1CB0F6] hover:scale-110 active:scale-95 transition-transform cursor-pointer p-1"
-            title="Listen pronunciation"
-          >
+        {/* Sentence with Blank Slot */}
+        <div className="bg-gray-50 border-2 border-[#e5e5e5] rounded-3xl p-6 sm:p-8 mb-12 flex flex-wrap items-center justify-center gap-2 text-xl sm:text-2xl font-bold text-[#4B4B4B]">
+          <button className="text-[#1CB0F6] hover:scale-110 active:scale-95 transition-transform p-1 mr-2 cursor-pointer">
             <Volume2 className="w-6 h-6 stroke-[2.5]" />
           </button>
-          <span className="text-xl sm:text-2xl font-bold text-[#4B4B4B] underline decoration-dotted decoration-gray-400 underline-offset-8">
-            {exercise.question}
-          </span>
+
+          <span>{prefix}</span>
+
+          {/* Underlined Blank Slot */}
+          {selectedWord ? (
+            <button
+              onClick={handleUnselectWord}
+              disabled={status !== "idle"}
+              className="btn-3d bg-white text-[#1CB0F6] font-black text-xl px-4 py-1.5 rounded-2xl border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6] active:translate-y-1 active:border-b-0 cursor-pointer shadow-sm transition-all"
+              title="Click to remove from blank"
+            >
+              {selectedWord}
+            </button>
+          ) : (
+            <div className="min-w-24 h-10 border-b-4 border-[#4B4B4B] mx-2 inline-flex items-center justify-center text-sm text-[#afafaf] font-extrabold">
+              ___
+            </div>
+          )}
+
+          <span>{suffix}</span>
         </div>
 
-        {/* Multiple Choice Options List */}
-        <div className="flex flex-col gap-3.5 my-auto">
-          {exercise.answer_data.options.map((option, index) => {
-            const isSelected = selectedOptionId === option.id;
+        {/* Word Bank Chips */}
+        <div className="flex flex-wrap gap-3 justify-center items-center py-4">
+          {exercise.answer_data.word_bank.map((word, idx) => {
+            const isUsed = selectedWord === word;
 
-            return (
+            return isUsed ? (
+              <div
+                key={idx}
+                className="bg-[#e5e5e5] rounded-2xl px-5 py-3 border-2 border-transparent h-12 min-w-20 opacity-50"
+              />
+            ) : (
               <button
-                key={option.id}
-                onClick={() => handleSelect(option.id)}
-                disabled={status !== "idle"}
-                className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl font-bold text-lg text-left transition-all duration-100 ease-out active:translate-y-1 active:border-b-2 cursor-pointer ${
-                  isSelected
-                    ? "bg-[#ddf4ff] text-[#1cb0f6] border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6]"
-                    : "bg-white text-[#4B4B4B] border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50"
-                }`}
+                key={idx}
+                onClick={() => handleSelectWord(word)}
+                disabled={status !== "idle" || hearts <= 0}
+                className="btn-3d bg-white text-[#4B4B4B] font-extrabold text-base px-6 py-3 rounded-2xl border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-0 cursor-pointer transition-all shadow-sm"
               >
-                <div className="flex items-center gap-4">
-                  {/* Number Badge */}
-                  <span
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black border-2 transition-colors ${
-                      isSelected
-                        ? "border-[#1CB0F6] text-[#1CB0F6] bg-white"
-                        : "border-[#e5e5e5] text-[#afafaf] bg-transparent"
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
-                  <span className="text-base sm:text-lg">{option.text}</span>
-                </div>
+                {word}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Fixed Bottom Validation Footer */}
+      {/* Validation Footer */}
       <footer
         className={`w-full border-t-2 transition-all duration-300 ease-out py-5 px-6 sm:px-12 ${
           status === "idle"
@@ -190,7 +190,7 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
         }`}
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Banner Message */}
+          {/* Banner message */}
           <div className="flex items-center gap-4 w-full sm:w-auto">
             {status === "correct" && (
               <div className="flex items-center gap-3 animate-bounce">
@@ -198,10 +198,8 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
                   <Check className="w-7 h-7 stroke-[3.5]" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-[#58CC02]">Nicely done!</h3>
-                  <p className="text-xs font-bold text-[#46a302]">
-                    +10 XP earned
-                  </p>
+                  <h3 className="text-xl font-black text-[#58CC02]">Well done!</h3>
+                  <p className="text-xs font-bold text-[#46a302]">+10 XP earned</p>
                 </div>
               </div>
             )}
@@ -212,9 +210,9 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
                   <X className="w-7 h-7 stroke-[3.5]" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-[#FF4B4B]">Correct solution:</h3>
+                  <h3 className="text-xl font-black text-[#FF4B4B]">Correct answer:</h3>
                   <p className="text-base font-extrabold text-[#ea2b2b]">
-                    {correctOption ? correctOption.text : ""}
+                    {exercise.answer_data.correct_answer}
                   </p>
                 </div>
               </div>
@@ -222,7 +220,7 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
 
             {status === "idle" && (
               <div className="hidden sm:block text-sm font-bold text-[#777777]">
-                Choose an option and press Check
+                Select a word chip to fill the blank
               </div>
             )}
           </div>
@@ -239,9 +237,9 @@ export const MultipleChoiceExercise: React.FC<MultipleChoiceExerciseProps> = ({
                   Skip
                 </button>
                 <Button
-                  variant={selectedOptionId !== null ? "primary" : "default"}
+                  variant={selectedWord !== null ? "primary" : "default"}
                   size="lg"
-                  disabled={selectedOptionId === null}
+                  disabled={selectedWord === null}
                   className="w-full sm:w-48 font-black tracking-widest"
                   onClick={handleCheck}
                 >

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
 import { Check, Heart, X } from "lucide-react";
+import { OutOfHeartsModal } from "./OutOfHeartsModal";
 
 export interface PairItem {
   id: number;
@@ -23,7 +24,10 @@ export interface MatchPairsExerciseData {
 export interface MatchPairsExerciseProps {
   exercise: MatchPairsExerciseData;
   progressPercent?: number;
+  targetProgressPercent?: number;
+  isReview?: boolean;
   onComplete?: () => void;
+  onSkip?: () => void;
   onExit?: () => void;
 }
 
@@ -36,33 +40,40 @@ interface CardItem {
 
 export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
   exercise,
-  progressPercent = 75,
+  progressPercent = 60,
+  targetProgressPercent = 80,
+  isReview = false,
   onComplete,
+  onSkip,
   onExit,
 }) => {
   const { hearts, decrementHearts, addXp } = useUserStore();
 
-  // Cards array shuffled once on mount
-  const [cards, setCards] = useState<CardItem[]>([]);
+  // Left column (German) and Right column (English)
+  const [leftCards, setLeftCards] = useState<CardItem[]>([]);
+  const [rightCards, setRightCards] = useState<CardItem[]>([]);
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
   const [matchedCardIds, setMatchedCardIds] = useState<string[]>([]);
   const [flashingSuccessIds, setFlashingSuccessIds] = useState<string[]>([]);
   const [flashingErrorIds, setFlashingErrorIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [isSkipped, setIsSkipped] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(progressPercent);
 
-  // Split pairs and shuffle on component mount
+  // Split pairs: German always in left column, English always in right column
   useEffect(() => {
-    const list: CardItem[] = [];
+    const leftList: CardItem[] = [];
+    const rightList: CardItem[] = [];
+
     exercise.answer_data.pairs.forEach((pair) => {
-      list.push({
+      leftList.push({
         cardId: `pair-${pair.id}-de`,
         pairId: pair.id,
         text: pair.german,
         lang: "german",
       });
-      list.push({
+      rightList.push({
         cardId: `pair-${pair.id}-en`,
         pairId: pair.id,
         text: pair.english,
@@ -70,18 +81,25 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
       });
     });
 
-    // Fisher-Yates shuffle
-    const shuffled = [...list];
-    for (let i = shuffled.length - 1; i > 0; i--) {
+    // Shuffle left list independently
+    for (let i = leftList.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      [leftList[i], leftList[j]] = [leftList[j], leftList[i]];
     }
-    setCards(shuffled);
+
+    // Shuffle right list independently
+    for (let i = rightList.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rightList[i], rightList[j]] = [rightList[j], rightList[i]];
+    }
+
+    setLeftCards(leftList);
+    setRightCards(rightList);
   }, [exercise]);
 
   // Handle card click
   const handleCardClick = (card: CardItem) => {
-    if (isProcessing) return;
+    if (isProcessing || hearts <= 0) return;
     if (matchedCardIds.includes(card.cardId)) return;
     if (selectedCard && selectedCard.cardId === card.cardId) {
       // Toggle off if clicking the already selected card
@@ -111,10 +129,11 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
         setSelectedCard(null);
         setIsProcessing(false);
 
-        // Check if all cards matched (8 cards)
-        if (nextMatched.length === cards.length && cards.length > 0) {
+        // Check if all cards matched
+        const totalCards = leftCards.length + rightCards.length;
+        if (nextMatched.length === totalCards && totalCards > 0) {
           setIsCompleted(true);
-          setProgress(100);
+          setProgress(targetProgressPercent);
           addXp(15);
         }
       }, 500);
@@ -132,12 +151,60 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
     }
   };
 
+  const handleSkip = () => {
+    if (isCompleted || isSkipped) return;
+    setIsSkipped(true);
+    setProgress((prev) => Math.min(100, prev + 5));
+  };
+
   const handleContinue = () => {
     if (isCompleted) {
       if (onComplete) {
         onComplete();
       }
+    } else if (isSkipped) {
+      if (onSkip) {
+        onSkip();
+      } else if (onComplete) {
+        onComplete();
+      }
     }
+  };
+
+  const renderCardButton = (card: CardItem) => {
+    const isMatched = matchedCardIds.includes(card.cardId);
+    const isSelected = selectedCard?.cardId === card.cardId;
+    const isFlashingSuccess = flashingSuccessIds.includes(card.cardId);
+    const isFlashingError = flashingErrorIds.includes(card.cardId);
+
+    // Determine styling based on match states
+    let cardStyle =
+      "bg-white text-[#4B4B4B] border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-2";
+
+    if (isMatched) {
+      cardStyle =
+        "bg-[#f7f7f7] text-[#afafaf] border-2 border-[#e5e5e5] border-b-2 border-b-[#e5e5e5] opacity-50 cursor-not-allowed";
+    } else if (isFlashingSuccess) {
+      cardStyle =
+        "bg-[#d7ffb8] text-[#58CC02] border-2 border-[#58CC02] border-b-4 border-b-[#46a302] scale-105";
+    } else if (isFlashingError) {
+      cardStyle =
+        "bg-[#ffdfe0] text-[#FF4B4B] border-2 border-[#FF4B4B] border-b-4 border-b-[#ea2b2b] animate-shake";
+    } else if (isSelected) {
+      cardStyle =
+        "bg-[#ddf4ff] text-[#1CB0F6] border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6]";
+    }
+
+    return (
+      <button
+        key={card.cardId}
+        onClick={() => handleCardClick(card)}
+        disabled={isMatched || isProcessing}
+        className={`w-full min-h-18 px-4 py-3 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center text-center transition-all duration-150 ease-out select-none cursor-pointer ${cardStyle}`}
+      >
+        {card.text}
+      </button>
+    );
   };
 
   return (
@@ -174,59 +241,38 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
       <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col">
         {/* Prompt */}
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-8">
+          {isReview && <span className="text-[#1CB0F6]">Give it a try: </span>}
           {exercise.prompt}
         </h1>
 
-        {/* 2-Column Responsive Grid */}
-        <div className="grid grid-cols-2 gap-3.5 sm:gap-4 my-auto">
-          {cards.map((card) => {
-            const isMatched = matchedCardIds.includes(card.cardId);
-            const isSelected = selectedCard?.cardId === card.cardId;
-            const isFlashingSuccess = flashingSuccessIds.includes(card.cardId);
-            const isFlashingError = flashingErrorIds.includes(card.cardId);
+        {/* 2 Distinct Columns: Left (German) vs Right (English) */}
+        <div className="grid grid-cols-2 gap-3.5 sm:gap-6 my-auto">
+          {/* Left Column (German Words) */}
+          <div className="flex flex-col gap-3.5 sm:gap-4">
+            {leftCards.map((card) => renderCardButton(card))}
+          </div>
 
-            // Determine styling based on match states
-            let cardStyle =
-              "bg-white text-[#4B4B4B] border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-2";
-
-            if (isMatched) {
-              cardStyle =
-                "bg-[#f7f7f7] text-[#afafaf] border-2 border-[#e5e5e5] border-b-2 border-b-[#e5e5e5] opacity-50 cursor-not-allowed";
-            } else if (isFlashingSuccess) {
-              cardStyle =
-                "bg-[#d7ffb8] text-[#58CC02] border-2 border-[#58CC02] border-b-4 border-b-[#46a302] scale-105";
-            } else if (isFlashingError) {
-              cardStyle =
-                "bg-[#ffdfe0] text-[#FF4B4B] border-2 border-[#FF4B4B] border-b-4 border-b-[#ea2b2b] animate-shake";
-            } else if (isSelected) {
-              cardStyle =
-                "bg-[#ddf4ff] text-[#1CB0F6] border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6]";
-            }
-
-            return (
-              <button
-                key={card.cardId}
-                onClick={() => handleCardClick(card)}
-                disabled={isMatched || isProcessing}
-                className={`w-full min-h-18 px-4 py-3 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center text-center transition-all duration-150 ease-out select-none cursor-pointer ${cardStyle}`}
-              >
-                {card.text}
-              </button>
-            );
-          })}
+          {/* Right Column (English Words) */}
+          <div className="flex flex-col gap-3.5 sm:gap-4">
+            {rightCards.map((card) => renderCardButton(card))}
+          </div>
         </div>
       </div>
 
       {/* Fixed Bottom Footer */}
       <footer
         className={`w-full border-t-2 transition-all duration-300 ease-out py-5 px-6 sm:px-12 ${
-          isCompleted ? "bg-[#d7ffb8] border-[#bcf096]" : "bg-white border-[#e5e5e5]"
+          isCompleted
+            ? "bg-[#d7ffb8] border-[#bcf096]"
+            : isSkipped
+            ? "bg-[#ffdfe0] border-[#f8bcc0]"
+            : "bg-white border-[#e5e5e5]"
         }`}
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Banner Status message */}
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            {isCompleted ? (
+            {isCompleted && (
               <div className="flex items-center gap-3 animate-bounce">
                 <div className="w-12 h-12 rounded-full bg-[#58CC02] flex items-center justify-center text-white shadow">
                   <Check className="w-7 h-7 stroke-[3.5]" />
@@ -238,7 +284,25 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
                   </p>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {isSkipped && (
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#FF4B4B] flex items-center justify-center text-white shadow flex-shrink-0 mt-0.5">
+                  <X className="w-7 h-7 stroke-[3.5]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-[#FF4B4B]">Correct solution:</h3>
+                  <p className="text-sm font-extrabold text-[#ea2b2b]">
+                    {exercise.answer_data.pairs
+                      .map((p) => `${p.german} = ${p.english}`)
+                      .join(" • ")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {!isCompleted && !isSkipped && (
               <div className="hidden sm:block text-sm font-bold text-[#777777]">
                 Tap a word in German and its matching English translation
               </div>
@@ -246,15 +310,24 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
           </div>
 
           {/* Action Button */}
-          <div className="w-full sm:w-auto">
-            {!isCompleted ? (
-              <button
-                disabled
-                className="w-full sm:w-48 py-4 px-8 rounded-2xl font-black uppercase tracking-widest text-base bg-[#e5e5e5] text-[#afafaf] border-b-4 border-b-[#d5d5d5] cursor-not-allowed select-none"
-              >
-                Check
-              </button>
-            ) : (
+          <div className="w-full sm:w-auto flex items-center gap-3 justify-end">
+            {!isCompleted && !isSkipped ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  className="px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-wider text-[#afafaf] hover:text-[#777777] hover:bg-gray-100 transition-all cursor-pointer"
+                >
+                  Skip
+                </button>
+                <button
+                  disabled
+                  className="w-full sm:w-48 py-4 px-8 rounded-2xl font-black uppercase tracking-widest text-base bg-[#e5e5e5] text-[#afafaf] border-b-4 border-b-[#d5d5d5] cursor-not-allowed select-none"
+                >
+                  Check
+                </button>
+              </>
+            ) : isCompleted ? (
               <Button
                 variant="primary"
                 size="lg"
@@ -263,10 +336,22 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
               >
                 Continue
               </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full sm:w-48 font-black tracking-widest bg-[#FF4B4B] hover:bg-[#ea2b2b] border-[#ea2b2b]"
+                onClick={handleContinue}
+              >
+                Got it
+              </Button>
             )}
           </div>
         </div>
       </footer>
+
+      {/* Out of Hearts Modal */}
+      <OutOfHeartsModal isOpen={hearts <= 0} />
     </div>
   );
 };

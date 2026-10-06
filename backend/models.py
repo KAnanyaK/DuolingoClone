@@ -65,6 +65,9 @@ class Skill(Base):
     title = Column(String(100), nullable=False)
     icon = Column(String(50), default="star")  # star, book, trophy, headset, etc.
     order = Column(Integer, default=1, nullable=False)
+    status = Column(String(20), default="locked", nullable=False)  # 'completed', 'active', 'locked'
+    progress = Column(Integer, default=0, nullable=False)
+    total_lessons = Column(Integer, default=4, nullable=False)
 
     unit = relationship("Unit", back_populates="skills")
     lessons = relationship("Lesson", back_populates="skill", cascade="all, delete-orphan", order_by="Lesson.order")

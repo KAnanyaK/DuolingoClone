@@ -20,12 +20,12 @@ def seed():
         db.add(german_course)
         db.flush()
 
-        # 2. Create Default User (5 hearts, 0 XP)
+        # 2. Create Default User (5 completed lessons * 10 = 50 XP, 5 hearts, 500 gems)
         default_user = User(
             username="duo_learner",
             email="learner@duolingo.local",
             hearts=5,
-            xp=0,
+            xp=50,
             gems=500,
             streak=1,
             streak_days=1,
@@ -35,95 +35,150 @@ def seed():
         db.add(default_user)
         db.flush()
 
-        # 3. Create Unit 1
+        # ==========================================
+        # SECTION 1 - UNIT 1: Greetings & Basics
+        # Skill 1 'completed', Skill 2 'active', remaining 'locked'
+        # ==========================================
         unit1 = Unit(
             course_id=german_course.id,
-            title="Unit 1: Basic German Greetings",
-            description="Say hello, introduce yourself, and order basic items",
+            title="Unit 1: Greetings & Basics",
+            description="Say hello, introduce yourself, and master daily essentials",
             order=1
         )
         db.add(unit1)
         db.flush()
 
-        # 4. Create Skills in Unit 1
-        skill1 = Skill(
-            unit_id=unit1.id,
-            title="Greetings",
-            icon="star",
-            order=1
-        )
-        skill2 = Skill(
-            unit_id=unit1.id,
-            title="Basics 1",
-            icon="book",
+        u1_skills = [
+            Skill(unit_id=unit1.id, title="Greetings", icon="star", order=1, status="completed", progress=4, total_lessons=4),
+            Skill(unit_id=unit1.id, title="Basics 1", icon="book", order=2, status="active", progress=1, total_lessons=4),
+            Skill(unit_id=unit1.id, title="Phrases", icon="message", order=3, status="locked", progress=0, total_lessons=4),
+        ]
+        db.add_all(u1_skills)
+        db.flush()
+
+        # ==========================================
+        # SECTION 1 - UNIT 2: Family & Friends
+        # Strictly locked (all skills locked, exactly 3 skills)
+        # ==========================================
+        unit2 = Unit(
+            course_id=german_course.id,
+            title="Unit 2: Family & Friends",
+            description="Talk about family members, relationships, and friends",
             order=2
         )
-        db.add_all([skill1, skill2])
+        db.add(unit2)
         db.flush()
 
-        # 5. Create Lessons in Skill 1
-        lesson1 = Lesson(
-            skill_id=skill1.id,
-            title="Lesson 1: Hello & Goodbye",
-            order=1,
-            xp_reward=10
-        )
-        lesson2 = Lesson(
-            skill_id=skill1.id,
-            title="Lesson 2: Polite Phrases",
-            order=2,
-            xp_reward=10
-        )
-        db.add_all([lesson1, lesson2])
-        db.flush()
-
-        # 6. Create Exercises for Lesson 1
-        exercises = [
-            Exercise(
-                lesson_id=lesson1.id,
-                type="multiple_choice",
-                prompt="How do you say 'Hello' in German?",
-                target_sentence="Hallo",
-                options=json.dumps(["Hallo", "Tschüss", "Danke", "Guten Abend"]),
-                correct_answer="Hallo",
-                order=1
-            ),
-            Exercise(
-                lesson_id=lesson1.id,
-                type="translate_to_source",
-                prompt="Translate this sentence:",
-                target_sentence="Guten Morgen!",
-                options=json.dumps(["Good", "morning", "night", "Hello", "Thanks", "please"]),
-                correct_answer="Good morning",
-                order=2
-            ),
-            Exercise(
-                lesson_id=lesson1.id,
-                type="multiple_choice",
-                prompt="Which of these means 'Bye'?",
-                target_sentence="Tschüss",
-                options=json.dumps(["Tschüss", "Bitte", "Ja", "Nein"]),
-                correct_answer="Tschüss",
-                order=3
-            ),
-            Exercise(
-                lesson_id=lesson1.id,
-                type="translate_to_target",
-                prompt="Translate 'Thank you very much':",
-                target_sentence="Thank you very much",
-                options=json.dumps(["Danke", "sehr", "Guten", "Tag", "Hallo", "bitte"]),
-                correct_answer="Danke sehr",
-                order=4
-            )
+        u2_skills = [
+            Skill(unit_id=unit2.id, title="Family", icon="star", order=1, status="locked", progress=0, total_lessons=4),
+            Skill(unit_id=unit2.id, title="Home", icon="book", order=2, status="locked", progress=0, total_lessons=4),
+            Skill(unit_id=unit2.id, title="Friends", icon="message", order=3, status="locked", progress=0, total_lessons=4),
         ]
-        db.add_all(exercises)
+        db.add_all(u2_skills)
+        db.flush()
+
+        # ==========================================
+        # SECTION 1 - UNIT 3: Colors & Numbers
+        # Strictly locked (all skills locked, exactly 3 skills)
+        # ==========================================
+        unit3 = Unit(
+            course_id=german_course.id,
+            title="Unit 3: Colors & Numbers",
+            description="Count numbers and describe things with vibrant colors",
+            order=3
+        )
+        db.add(unit3)
+        db.flush()
+
+        u3_skills = [
+            Skill(unit_id=unit3.id, title="Numbers", icon="star", order=1, status="locked", progress=0, total_lessons=4),
+            Skill(unit_id=unit3.id, title="Colors", icon="book", order=2, status="locked", progress=0, total_lessons=4),
+            Skill(unit_id=unit3.id, title="Shopping", icon="utensils", order=3, status="locked", progress=0, total_lessons=4),
+        ]
+        db.add_all(u3_skills)
+        db.flush()
+
+        # All skills in all units receive lessons containing all 5 exercise types
+        all_skills = u1_skills + u2_skills + u3_skills
+        for skill in all_skills:
+            lesson = Lesson(
+                skill_id=skill.id,
+                title=f"{skill.title} Lesson",
+                order=1,
+                xp_reward=10
+            )
+            db.add(lesson)
+            db.flush()
+
+            exercises = [
+                # 1. Translate
+                Exercise(
+                    lesson_id=lesson.id,
+                    type="translate",
+                    prompt="Translate this sentence",
+                    target_sentence="Guten Morgen",
+                    options=json.dumps(["Good", "night", "morning", "hello", "apple"]),
+                    correct_answer="Good morning",
+                    order=1
+                ),
+                # 2. Multiple Choice
+                Exercise(
+                    lesson_id=lesson.id,
+                    type="multiple_choice",
+                    prompt="Select the correct translation",
+                    target_sentence="The apple",
+                    options=json.dumps([
+                        {"id": 1, "text": "Der Apfel"},
+                        {"id": 2, "text": "Das Brot"},
+                        {"id": 3, "text": "Die Milch"},
+                    ]),
+                    correct_answer="1",
+                    order=2
+                ),
+                # 3. Match Pairs
+                Exercise(
+                    lesson_id=lesson.id,
+                    type="match_pairs",
+                    prompt="Tap the matching pairs",
+                    target_sentence=None,
+                    options=json.dumps([
+                        {"id": 1, "german": "Junge", "english": "Boy"},
+                        {"id": 2, "german": "Mädchen", "english": "Girl"},
+                        {"id": 3, "german": "Frau", "english": "Woman"},
+                        {"id": 4, "german": "Mann", "english": "Man"},
+                    ]),
+                    correct_answer="",
+                    order=3
+                ),
+                # 4. Fill in the Blank
+                Exercise(
+                    lesson_id=lesson.id,
+                    type="fill_blank",
+                    prompt="Fill in the missing word",
+                    target_sentence="Der ___ frisst den Apfel.",
+                    options=json.dumps(["Junge", "Apfel", "Wasser", "Brot"]),
+                    correct_answer="Junge",
+                    order=4
+                ),
+                # 5. Type the Answer
+                Exercise(
+                    lesson_id=lesson.id,
+                    type="type_answer",
+                    prompt="Write this in German",
+                    target_sentence="Hello",
+                    options=json.dumps([]),
+                    correct_answer="Hallo",
+                    order=5
+                ),
+            ]
+            db.add_all(exercises)
 
         db.commit()
-        print("Database seeded successfully with dummy German course, Unit 1, lessons, exercises, and default user!")
+        print("Database seeded with exactly 3 skills per unit and 5 exercise types per lesson successfully!")
 
     except Exception as e:
         db.rollback()
-        print(f"Error during database seeding: {e}")
+        print(f"Error during seeding: {e}")
         raise
     finally:
         db.close()

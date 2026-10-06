@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
@@ -12,17 +12,22 @@ export interface LessonCompleteProps {
 }
 
 export const LessonComplete: React.FC<LessonCompleteProps> = ({
-  xpGained = 35,
+  xpGained = 10,
   completedLessonId = 1,
 }) => {
   const router = useRouter();
   const { streak, xp, setStats } = useUserStore();
 
-  const [finalXp, setFinalXp] = useState<number>(xp);
-  const [finalStreak, setFinalStreak] = useState<number>(streak);
-  const [isPersisted, setIsPersisted] = useState<boolean>(false);
+  const [displayXp, setDisplayXp] = useState<number>(xp);
+  const [displayStreak, setDisplayStreak] = useState<number>(streak);
+
+  // Strict guard to ensure the API call only runs once on mount
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     // Persist progress to SQLite database backend
     fetch("http://localhost:8000/api/users/1/progress", {
       method: "POST",
@@ -39,28 +44,45 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
         return res.json();
       })
       .then((data: { total_xp: number; streak_days: number }) => {
-        setFinalXp(data.total_xp);
-        setFinalStreak(data.streak_days);
-        // Update global Zustand store with definitive database values
+        const targetXp = data.total_xp;
+        const targetStreak = data.streak_days;
+
+        // Animate smoothly to target XP and strictly stop
+        const startXp = xp;
+        const diffXp = targetXp - startXp;
+        const steps = 15;
+        let step = 0;
+
+        const interval = setInterval(() => {
+          step++;
+          if (step >= steps) {
+            setDisplayXp(targetXp);
+            clearInterval(interval);
+          } else {
+            setDisplayXp(Math.round(startXp + (diffXp * step) / steps));
+          }
+        }, 40);
+
+        setDisplayStreak(targetStreak);
+
+        // Update global Zustand store
         setStats({
-          xp: data.total_xp,
-          streak: data.streak_days,
+          xp: targetXp,
+          streak: targetStreak,
         });
-        setIsPersisted(true);
       })
       .catch(() => {
-        // Fallback update to local state and Zustand store if backend server is not connected
-        const newXp = xp + xpGained;
-        const newStreak = streak + 1;
-        setFinalXp(newXp);
-        setFinalStreak(newStreak);
+        // Fallback calculation if backend unreachable
+        const targetXp = xp + xpGained;
+        const targetStreak = streak + 1;
+        setDisplayXp(targetXp);
+        setDisplayStreak(targetStreak);
         setStats({
-          xp: newXp,
-          streak: newStreak,
+          xp: targetXp,
+          streak: targetStreak,
         });
-        setIsPersisted(true);
       });
-  }, [xpGained, completedLessonId, setStats, xp, streak]);
+  }, []); // Empty dependency array: strictly once on mount
 
   const handleContinue = () => {
     router.push("/");
@@ -139,7 +161,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
             <div className="bg-white rounded-xl py-4 px-3 flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 text-[#FFC800] mb-1">
                 <Zap className="w-7 h-7 fill-[#FFC800] stroke-none" />
-                <span className="text-2xl sm:text-3xl font-black">{finalXp}</span>
+                <span className="text-2xl sm:text-3xl font-black">{displayXp}</span>
               </div>
               <span className="text-xs font-black text-[#e5a800] uppercase tracking-wider">
                 +{xpGained} XP
@@ -155,7 +177,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
             <div className="bg-white rounded-xl py-4 px-3 flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 text-[#FF9600] mb-1">
                 <Flame className="w-7 h-7 fill-[#FF9600] stroke-none" />
-                <span className="text-2xl sm:text-3xl font-black">{finalStreak}</span>
+                <span className="text-2xl sm:text-3xl font-black">{displayStreak}</span>
               </div>
               <span className="text-xs font-black text-[#e07f00] uppercase tracking-wider">
                 Days

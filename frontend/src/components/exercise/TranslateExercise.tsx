@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
 import { Check, X, Volume2, Sparkles, Heart } from "lucide-react";
+import { OutOfHeartsModal } from "./OutOfHeartsModal";
 
 export interface ExerciseData {
   id: number;
@@ -19,7 +20,10 @@ export interface ExerciseData {
 export interface TranslateExerciseProps {
   exercise: ExerciseData;
   progressPercent?: number;
+  targetProgressPercent?: number;
+  isReview?: boolean;
   onComplete?: () => void;
+  onSkip?: () => void;
   onExit?: () => void;
 }
 
@@ -31,8 +35,11 @@ interface WordChipItem {
 
 export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
   exercise,
-  progressPercent = 35,
+  progressPercent = 0,
+  targetProgressPercent = 20,
+  isReview = false,
   onComplete,
+  onSkip,
   onExit,
 }) => {
   const { hearts, decrementHearts, addXp } = useUserStore();
@@ -50,12 +57,15 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
   const [selectedChips, setSelectedChips] = useState<WordChipItem[]>([]);
 
   // Validation status
-  const [status, setStatus] = useState<"idle" | "correct" | "incorrect">("idle");
+  const [status, setStatus] = useState<"idle" | "correct" | "incorrect" | "skipped">("idle");
   const [progress, setProgress] = useState<number>(progressPercent);
+
+  // Drag and drop state for answer zone reordering
+  const [draggedChipIndex, setDraggedChipIndex] = useState<number | null>(null);
 
   // Handle clicking a chip in the word bank (moves it to answer zone)
   const handleSelectChip = (chip: WordChipItem) => {
-    if (status !== "idle") return;
+    if (status !== "idle" || hearts <= 0) return;
     setBankChips((prev) => prev.filter((item) => item.id !== chip.id));
     setSelectedChips((prev) => [...prev, chip]);
   };
@@ -71,6 +81,34 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
     });
   };
 
+  // Native HTML5 Drag and Drop Handlers for reordering inside the answer zone
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (status !== "idle") return;
+    setDraggedChipIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedChipIndex === null || draggedChipIndex === targetIndex || status !== "idle") {
+      setDraggedChipIndex(null);
+      return;
+    }
+
+    setSelectedChips((prev) => {
+      const copy = [...prev];
+      const [draggedItem] = copy.splice(draggedChipIndex, 1);
+      copy.splice(targetIndex, 0, draggedItem);
+      return copy;
+    });
+    setDraggedChipIndex(null);
+  };
+
   // Check the answer
   const handleCheck = () => {
     if (selectedChips.length === 0) return;
@@ -84,12 +122,19 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
 
     if (isMatch) {
       setStatus("correct");
-      setProgress((prev) => Math.min(100, prev + 25));
+      setProgress(targetProgressPercent);
       addXp(10);
     } else {
       setStatus("incorrect");
       decrementHearts();
     }
+  };
+
+  // Handle Skip action
+  const handleSkip = () => {
+    if (status !== "idle") return;
+    setStatus("skipped");
+    setProgress((prev) => Math.min(100, prev + 5)); // Progress increments by 5% on skip
   };
 
   // Reset or proceed on action button in banner
@@ -98,11 +143,15 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
       if (onComplete) {
         onComplete();
       } else {
-        // Reset state for continuous replay demo
         setStatus("idle");
       }
+    } else if (status === "skipped") {
+      if (onSkip) {
+        onSkip();
+      } else if (onComplete) {
+        onComplete();
+      }
     } else if (status === "incorrect") {
-      // Allow user to retry
       setStatus("idle");
     }
   };
@@ -142,6 +191,7 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
       <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col">
         {/* Exercise Prompt Title */}
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-8">
+          {isReview && <span className="text-[#1CB0F6]">Give it a try: </span>}
           {exercise.prompt}
         </h1>
 
@@ -198,18 +248,30 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
         <div className="min-h-24 border-b-2 border-[#e5e5e5] py-3 mb-10 flex flex-wrap gap-2.5 items-center">
           {selectedChips.length === 0 ? (
             <div className="text-[#afafaf] font-bold text-sm italic select-none">
-              Tap the words below to build your answer
+              Tap or drag words below to build your answer
             </div>
           ) : (
-            selectedChips.map((chip) => (
-              <button
+            selectedChips.map((chip, index) => (
+              <div
                 key={chip.id}
-                onClick={() => handleUnselectChip(chip)}
-                disabled={status !== "idle"}
-                className="btn-3d bg-white text-[#4B4B4B] font-bold text-base px-4 py-2.5 rounded-2xl border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-0 cursor-pointer transition-all shadow-sm"
+                draggable={status === "idle"}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`transition-transform ${
+                  draggedChipIndex === index ? "opacity-50 scale-95" : ""
+                }`}
               >
-                {chip.text}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleUnselectChip(chip)}
+                  disabled={status !== "idle"}
+                  className="btn-3d bg-white text-[#4B4B4B] font-bold text-base px-4 py-2.5 rounded-2xl border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-0 cursor-grab active:cursor-grabbing transition-all shadow-sm"
+                  title="Click to remove or drag to reorder"
+                >
+                  {chip.text}
+                </button>
+              </div>
             ))
           )}
         </div>
@@ -269,7 +331,7 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
               </div>
             )}
 
-            {status === "incorrect" && (
+            {(status === "incorrect" || status === "skipped") && (
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-full bg-[#FF4B4B] flex items-center justify-center text-white shadow flex-shrink-0 mt-0.5">
                   <X className="w-7 h-7 stroke-[3.5]" />
@@ -290,18 +352,27 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
             )}
           </div>
 
-          {/* Action Button */}
-          <div className="w-full sm:w-auto">
+          {/* Action Buttons */}
+          <div className="w-full sm:w-auto flex items-center gap-3 justify-end">
             {status === "idle" ? (
-              <Button
-                variant={selectedChips.length > 0 ? "primary" : "default"}
-                size="lg"
-                disabled={selectedChips.length === 0}
-                className="w-full sm:w-48 font-black tracking-widest"
-                onClick={handleCheck}
-              >
-                Check
-              </Button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  className="px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-wider text-[#afafaf] hover:text-[#777777] hover:bg-gray-100 transition-all cursor-pointer"
+                >
+                  Skip
+                </button>
+                <Button
+                  variant={selectedChips.length > 0 ? "primary" : "default"}
+                  size="lg"
+                  disabled={selectedChips.length === 0}
+                  className="w-full sm:w-48 font-black tracking-widest"
+                  onClick={handleCheck}
+                >
+                  Check
+                </Button>
+              </>
             ) : status === "correct" ? (
               <Button
                 variant="primary"
@@ -324,6 +395,9 @@ export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
           </div>
         </div>
       </footer>
+
+      {/* Out of Hearts Modal */}
+      <OutOfHeartsModal isOpen={hearts <= 0} />
     </div>
   );
 };
