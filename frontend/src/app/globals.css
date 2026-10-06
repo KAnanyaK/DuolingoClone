@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme {
+  --color-feather-green: #58CC02;
+  --color-feather-green-dark: #46a302;
+  --color-sky-blue: #1CB0F6;
+  --color-sky-blue-dark: #1899d6;
+  --color-ink: #4B4B4B;
+  --color-ink-light: #777777;
+  --color-ink-border: #E5E5E5;
+  --color-incorrect-red: #FF4B4B;
+  --color-incorrect-red-dark: #ea2b2b;
+  --color-card-border: #e5e5e5;
+  --color-duo-gray: #afafaf;
+  --font-nunito: var(--font-nunito), "Nunito", "DIN Round Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  --feather-green: #58CC02;
+  --feather-green-dark: #46a302;
+  --sky-blue: #1CB0F6;
+  --sky-blue-dark: #1899d6;
+  --ink: #4B4B4B;
+  --incorrect-red: #FF4B4B;
+  --incorrect-red-dark: #ea2b2b;
+}
+
+body {
+  font-family: var(--font-nunito), "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #4B4B4B;
+}
+
+/* Duolingo 3D Button Utility Styles */
+.btn-3d {
+  position: relative;
+  transition: transform 0.1s ease, border-bottom-width 0.1s ease;
+  user-select: none;
+}
+
+.btn-3d:active {
+  transform: translateY(4px);
+  border-bottom-width: 0px !important;
+}
+
+/* Green 3D Button */
+.btn-green-3d {
+  background-color: #58CC02;
+  color: #ffffff;
+  border-bottom: 4px solid #46a302;
+}
+.btn-green-3d:hover {
+  filter: brightness(1.05);
+}
+.btn-green-3d:active {
+  transform: translateY(4px);
+  border-bottom-width: 0px !important;
+}
+
+/* Blue 3D Button */
+.btn-blue-3d {
+  background-color: #1CB0F6;
+  color: #ffffff;
+  border-bottom: 4px solid #1899d6;
+}
+.btn-blue-3d:hover {
+  filter: brightness(1.05);
+}
+.btn-blue-3d:active {
+  transform: translateY(4px);
+  border-bottom-width: 0px !important;
+}
+
+/* Red 3D Button */
+.btn-red-3d {
+  background-color: #FF4B4B;
+  color: #ffffff;
+  border-bottom: 4px solid #ea2b2b;
+}
+.btn-red-3d:hover {
+  filter: brightness(1.05);
+}
+.btn-red-3d:active {
+  transform: translateY(4px);
+  border-bottom-width: 0px !important;
+}
+
+/* White/Neutral 3D Button */
+.btn-white-3d {
+  background-color: #ffffff;
+  color: #4B4B4B;
+  border: 2px solid #e5e5e5;
+  border-bottom: 4px solid #e5e5e5;
+}
+.btn-white-3d:hover {
+  background-color: #f7f7f7;
+}
+.btn-white-3d:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px !important;
+}

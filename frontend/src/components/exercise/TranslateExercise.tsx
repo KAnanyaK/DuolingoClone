@@ -1,0 +1,329 @@
+"use client";
+
+import React, { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useUserStore } from "@/store/useUserStore";
+import { Check, X, Volume2, Sparkles, Heart } from "lucide-react";
+
+export interface ExerciseData {
+  id: number;
+  type: string;
+  prompt: string;
+  question: string;
+  answer_data: {
+    correct_answer: string[];
+    word_bank: string[];
+  };
+}
+
+export interface TranslateExerciseProps {
+  exercise: ExerciseData;
+  progressPercent?: number;
+  onComplete?: () => void;
+  onExit?: () => void;
+}
+
+interface WordChipItem {
+  id: string; // unique id per chip to handle duplicate words cleanly
+  text: string;
+  originalIndex: number;
+}
+
+export const TranslateExercise: React.FC<TranslateExerciseProps> = ({
+  exercise,
+  progressPercent = 35,
+  onComplete,
+  onExit,
+}) => {
+  const { hearts, decrementHearts, addXp } = useUserStore();
+
+  // Initialize word bank with stable item IDs and original indices
+  const [bankChips, setBankChips] = useState<WordChipItem[]>(() =>
+    exercise.answer_data.word_bank.map((word, index) => ({
+      id: `${word}-${index}`,
+      text: word,
+      originalIndex: index,
+    }))
+  );
+
+  // User's selected chips placed in the answer zone
+  const [selectedChips, setSelectedChips] = useState<WordChipItem[]>([]);
+
+  // Validation status
+  const [status, setStatus] = useState<"idle" | "correct" | "incorrect">("idle");
+  const [progress, setProgress] = useState<number>(progressPercent);
+
+  // Handle clicking a chip in the word bank (moves it to answer zone)
+  const handleSelectChip = (chip: WordChipItem) => {
+    if (status !== "idle") return;
+    setBankChips((prev) => prev.filter((item) => item.id !== chip.id));
+    setSelectedChips((prev) => [...prev, chip]);
+  };
+
+  // Handle clicking a chip in the answer zone (returns it to word bank)
+  const handleUnselectChip = (chip: WordChipItem) => {
+    if (status !== "idle") return;
+    setSelectedChips((prev) => prev.filter((item) => item.id !== chip.id));
+    setBankChips((prev) => {
+      // Re-insert and sort back by originalIndex for consistent ordering
+      const updated = [...prev, chip];
+      return updated.sort((a, b) => a.originalIndex - b.originalIndex);
+    });
+  };
+
+  // Check the answer
+  const handleCheck = () => {
+    if (selectedChips.length === 0) return;
+
+    const userWords = selectedChips.map((c) => c.text);
+    const correctWords = exercise.answer_data.correct_answer;
+
+    const isMatch =
+      userWords.length === correctWords.length &&
+      userWords.every((word, idx) => word.toLowerCase() === correctWords[idx].toLowerCase());
+
+    if (isMatch) {
+      setStatus("correct");
+      setProgress((prev) => Math.min(100, prev + 25));
+      addXp(10);
+    } else {
+      setStatus("incorrect");
+      decrementHearts();
+    }
+  };
+
+  // Reset or proceed on action button in banner
+  const handleContinue = () => {
+    if (status === "correct") {
+      if (onComplete) {
+        onComplete();
+      } else {
+        // Reset state for continuous replay demo
+        setStatus("idle");
+      }
+    } else if (status === "incorrect") {
+      // Allow user to retry
+      setStatus("idle");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col justify-between bg-white font-nunito select-none">
+      {/* Top Header with Progress Bar & Hearts */}
+      <div className="max-w-4xl w-full mx-auto px-4 sm:px-8 pt-6 pb-4 flex items-center gap-4 sm:gap-6">
+        {/* Close Button */}
+        <button
+          onClick={onExit}
+          className="text-[#afafaf] hover:text-[#4b4b4b] p-1.5 transition-colors cursor-pointer"
+          title="Exit lesson"
+        >
+          <X className="w-6 h-6 stroke-[3]" />
+        </button>
+
+        {/* Lesson Progress Bar */}
+        <div className="flex-1 h-4 bg-[#e5e5e5] rounded-full overflow-hidden p-0.5">
+          <div
+            className="h-full bg-[#58CC02] rounded-full transition-all duration-500 ease-out relative"
+            style={{ width: `${progress}%` }}
+          >
+            {/* Gloss highlight */}
+            <div className="absolute top-0.5 left-2 right-2 h-1 bg-white/40 rounded-full" />
+          </div>
+        </div>
+
+        {/* Hearts Indicator */}
+        <div className="flex items-center gap-1.5 font-black text-[#FF4B4B]">
+          <Heart className="w-6 h-6 fill-[#FF4B4B]" />
+          <span className="text-lg">{hearts}</span>
+        </div>
+      </div>
+
+      {/* Main Exercise Content Area */}
+      <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col">
+        {/* Exercise Prompt Title */}
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-8">
+          {exercise.prompt}
+        </h1>
+
+        {/* Mascot & Target Text Bubble Row */}
+        <div className="flex items-end gap-4 sm:gap-6 mb-10">
+          {/* Duolingo Mascot SVG Placeholder */}
+          <div className="w-20 h-24 sm:w-24 sm:h-28 flex-shrink-0 relative">
+            <svg
+              viewBox="0 0 100 120"
+              className="w-full h-full drop-shadow-sm"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Duo Owl Body */}
+              <rect x="15" y="20" width="70" height="85" rx="35" fill="#58CC02" />
+              {/* Belly */}
+              <ellipse cx="50" cy="75" rx="22" ry="25" fill="#84D8FF" opacity="0.3" />
+              {/* Eyes Outer */}
+              <circle cx="36" cy="45" r="15" fill="white" />
+              <circle cx="64" cy="45" r="15" fill="white" />
+              {/* Pupils */}
+              <circle cx="38" cy="45" r="7" fill="#4B4B4B" />
+              <circle cx="62" cy="45" r="7" fill="#4B4B4B" />
+              {/* Sparkle */}
+              <circle cx="40" cy="43" r="2.5" fill="white" />
+              <circle cx="64" cy="43" r="2.5" fill="white" />
+              {/* Beak */}
+              <polygon points="50,49 44,58 56,58" fill="#FF9600" />
+              {/* Feet */}
+              <ellipse cx="38" cy="106" rx="10" ry="4" fill="#FF9600" />
+              <ellipse cx="62" cy="106" rx="10" ry="4" fill="#FF9600" />
+            </svg>
+          </div>
+
+          {/* Speech Bubble */}
+          <div className="relative bg-white border-2 border-[#e5e5e5] rounded-2xl p-4 sm:p-5 shadow-sm flex items-center gap-3">
+            {/* Speech bubble pointer / triangle */}
+            <div className="absolute -left-2.5 bottom-6 w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-8 border-r-[#e5e5e5]" />
+            <div className="absolute -left-2 bottom-6 w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-8 border-r-white" />
+
+            <button
+              className="text-[#1CB0F6] hover:scale-110 active:scale-95 transition-transform cursor-pointer p-1"
+              title="Listen pronunciation"
+            >
+              <Volume2 className="w-6 h-6 stroke-[2.5]" />
+            </button>
+            <span className="text-xl sm:text-2xl font-bold text-[#4B4B4B]">
+              {exercise.question}
+            </span>
+          </div>
+        </div>
+
+        {/* Answer Zone with Solid Bottom Border */}
+        <div className="min-h-24 border-b-2 border-[#e5e5e5] py-3 mb-10 flex flex-wrap gap-2.5 items-center">
+          {selectedChips.length === 0 ? (
+            <div className="text-[#afafaf] font-bold text-sm italic select-none">
+              Tap the words below to build your answer
+            </div>
+          ) : (
+            selectedChips.map((chip) => (
+              <button
+                key={chip.id}
+                onClick={() => handleUnselectChip(chip)}
+                disabled={status !== "idle"}
+                className="btn-3d bg-white text-[#4B4B4B] font-bold text-base px-4 py-2.5 rounded-2xl border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-0 cursor-pointer transition-all shadow-sm"
+              >
+                {chip.text}
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Word Bank Area */}
+        <div className="flex flex-wrap gap-2.5 justify-center items-center py-4">
+          {exercise.answer_data.word_bank.map((word, index) => {
+            const chipId = `${word}-${index}`;
+            const isUsed = selectedChips.some((c) => c.id === chipId);
+
+            return isUsed ? (
+              // Empty placeholder slot when word is selected into answer zone
+              <div
+                key={chipId}
+                className="bg-[#e5e5e5] rounded-2xl px-4 py-2.5 border-2 border-transparent h-12 min-w-16 opacity-50"
+              />
+            ) : (
+              <button
+                key={chipId}
+                onClick={() =>
+                  handleSelectChip({ id: chipId, text: word, originalIndex: index })
+                }
+                disabled={status !== "idle"}
+                className="btn-3d bg-white text-[#4B4B4B] font-extrabold text-base px-4 py-2.5 rounded-2xl border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-0 cursor-pointer transition-all shadow-sm"
+              >
+                {word}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Fixed Bottom Validation Footer / Banner */}
+      <footer
+        className={`w-full border-t-2 transition-all duration-300 ease-out py-5 px-6 sm:px-12 ${
+          status === "idle"
+            ? "bg-white border-[#e5e5e5]"
+            : status === "correct"
+            ? "bg-[#d7ffb8] border-[#bcf096]"
+            : "bg-[#ffdfe0] border-[#f8bcc0]"
+        }`}
+      >
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Banner Message Area */}
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            {status === "correct" && (
+              <div className="flex items-center gap-3 animate-bounce">
+                <div className="w-12 h-12 rounded-full bg-[#58CC02] flex items-center justify-center text-white shadow">
+                  <Check className="w-7 h-7 stroke-[3.5]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-[#58CC02]">Nicely done!</h3>
+                  <p className="text-xs font-bold text-[#46a302]">
+                    +10 XP earned
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {status === "incorrect" && (
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#FF4B4B] flex items-center justify-center text-white shadow flex-shrink-0 mt-0.5">
+                  <X className="w-7 h-7 stroke-[3.5]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-[#FF4B4B]">Correct solution:</h3>
+                  <p className="text-base font-extrabold text-[#ea2b2b]">
+                    {exercise.answer_data.correct_answer.join(" ")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {status === "idle" && (
+              <div className="hidden sm:block text-sm font-bold text-[#777777]">
+                Select words in the right order and press Check
+              </div>
+            )}
+          </div>
+
+          {/* Action Button */}
+          <div className="w-full sm:w-auto">
+            {status === "idle" ? (
+              <Button
+                variant={selectedChips.length > 0 ? "primary" : "default"}
+                size="lg"
+                disabled={selectedChips.length === 0}
+                className="w-full sm:w-48 font-black tracking-widest"
+                onClick={handleCheck}
+              >
+                Check
+              </Button>
+            ) : status === "correct" ? (
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full sm:w-48 font-black tracking-widest bg-[#58CC02] border-[#46a302]"
+                onClick={handleContinue}
+              >
+                Continue
+              </Button>
+            ) : (
+              <Button
+                variant="danger"
+                size="lg"
+                className="w-full sm:w-48 font-black tracking-widest bg-[#FF4B4B] border-[#ea2b2b]"
+                onClick={handleContinue}
+              >
+                Got it
+              </Button>
+            )}
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
