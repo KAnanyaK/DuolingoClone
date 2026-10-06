@@ -208,4 +208,71 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
     }
 
 
+@app.get("/api/courses/{course_id}/path")
+def get_course_path(course_id: int):
+    return {
+        "course_id": course_id,
+        "course_title": "German",
+        "units": [
+            {
+                "id": 1,
+                "title": "Unit 1: Basic German Greetings",
+                "description": "Say hello, introduce yourself, and order basic items",
+                "order": 1,
+                "skills": [
+                    {
+                        "id": 1,
+                        "name": "Greetings",
+                        "status": "completed",
+                        "progress": 4,
+                        "total_lessons": 4,
+                        "icon": "star",
+                    },
+                    {
+                        "id": 2,
+                        "name": "Basics 1",
+                        "status": "active",
+                        "progress": 1,
+                        "total_lessons": 4,
+                        "icon": "book",
+                    },
+                    {
+                        "id": 3,
+                        "name": "Phrases",
+                        "status": "locked",
+                        "progress": 0,
+                        "total_lessons": 4,
+                        "icon": "message",
+                    },
+                    {
+                        "id": 4,
+                        "name": "Animals",
+                        "status": "locked",
+                        "progress": 0,
+                        "total_lessons": 5,
+                        "icon": "paw",
+                    },
+                    {
+                        "id": 5,
+                        "name": "Food",
+                        "status": "locked",
+                        "progress": 0,
+                        "total_lessons": 4,
+                        "icon": "utensils",
+                    },
+                    {
+                        "id": 6,
+                        "name": "Checkpoint 1",
+                        "status": "locked",
+                        "progress": 0,
+                        "total_lessons": 1,
+                        "icon": "trophy",
+                    },
+                ],
+            }
+        ],
+    }
+
+
+
 
