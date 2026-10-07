@@ -1,10 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SkillNode, SkillStatus } from "@/components/path/SkillNode";
 import { Button } from "@/components/ui/Button";
 import { BookOpen, Lock } from "lucide-react";
+import { DancingOwl } from "@/components/mascots/DancingOwl";
+import { EatingPanda } from "@/components/mascots/EatingPanda";
+import { PainterMascot } from "@/components/mascots/PainterMascot";
 
 interface SkillItem {
   id: number;
@@ -34,7 +38,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/courses/1/path")
+    fetch("http://localhost:8000/api/courses/1/path", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch path data");
         return res.json();
@@ -152,25 +156,45 @@ export default function Home() {
                       </p>
                     </div>
                     {!isUnitLocked && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className={`hidden sm:inline-flex ${unitColorConfig.textColor} font-black border-2 border-white/60 bg-white shadow-sm`}
+                      <Link
+                        href={`/guidebook/${unit.order}`}
+                        className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl ${unitColorConfig.textColor} font-black text-sm border-2 border-white/60 bg-white hover:bg-gray-50 active:translate-y-0.5 shadow-sm transition-all cursor-pointer select-none`}
                       >
-                        <BookOpen className="w-4 h-4 mr-1.5" /> Guidebook
-                      </Button>
+                        <BookOpen className="w-4 h-4 mr-0.5" /> Guidebook
+                      </Link>
                     )}
                   </div>
 
-                  {/* Zigzag Path Column */}
-                  <div className="flex flex-col items-center gap-10 sm:gap-14 py-4 w-full">
+                  {/* Zigzag Path Column with Relative Positioning for Mascots */}
+                  <div className="relative flex flex-col items-center gap-10 sm:gap-14 py-4 w-full">
+                    {/* Unit 1 Mascot: Dancing Duo Owl on the right side */}
+                    {unit.order === 1 && (
+                      <div className="absolute right-2 sm:right-4 md:right-12 top-[30%] -translate-y-1/2 z-0 scale-75 sm:scale-90 md:scale-100 pointer-events-none transition-transform">
+                        <DancingOwl />
+                      </div>
+                    )}
+
+                    {/* Unit 2 Mascot: Eating Panda on the left side (Always fully colored even if unit is locked) */}
+                    {unit.order === 2 && (
+                      <div className="absolute left-2 sm:left-4 md:left-12 top-[50%] -translate-y-1/2 z-0 scale-75 sm:scale-90 md:scale-100 pointer-events-none transition-transform">
+                        <EatingPanda />
+                      </div>
+                    )}
+
+                    {/* Unit 3 Mascot: Painter Mascot on the right side */}
+                    {unit.order === 3 && (
+                      <div className="absolute right-2 sm:right-4 md:right-12 top-[40%] -translate-y-1/2 z-0 scale-75 sm:scale-90 md:scale-100 pointer-events-none transition-transform">
+                        <PainterMascot />
+                      </div>
+                    )}
+
                     {unit.skills.map((skill, index) => {
                       const offsetClass = zigzagOffsets[index % zigzagOffsets.length];
 
                       return (
                         <div
                           key={skill.id}
-                          className={`transition-transform duration-200 ${offsetClass}`}
+                          className={`relative z-10 transition-transform duration-200 ${offsetClass}`}
                         >
                           <SkillNode
                             id={skill.id}
@@ -189,14 +213,14 @@ export default function Home() {
             })}
 
             {/* Gray Disabled Container: Section 2: Coming Soon */}
-            <div className="w-full bg-[#f2f2f2] border-2 border-dashed border-[#d6d6d6] rounded-3xl p-8 my-8 text-center flex flex-col items-center justify-center opacity-70 select-none">
-              <div className="w-12 h-12 rounded-full bg-[#e5e5e5] flex items-center justify-center text-[#afafaf] mb-3">
+            <div className="w-full bg-[#3B464F] dark:bg-[#f2f2f2] border-2 border-dashed border-[#58646D] dark:border-[#d6d6d6] rounded-3xl p-8 my-8 text-center flex flex-col items-center justify-center opacity-100 dark:opacity-70 select-none shadow-sm transition-colors">
+              <div className="w-12 h-12 rounded-full bg-[#2B353D] dark:bg-[#e5e5e5] flex items-center justify-center text-[#E5E5E5] dark:text-[#afafaf] mb-3 shadow-inner">
                 <Lock className="w-6 h-6 stroke-[2.5]" />
               </div>
-              <h3 className="text-lg font-black text-[#8f8f8f] uppercase tracking-wider mb-1">
+              <h3 className="text-lg font-black text-white dark:text-[#8f8f8f] uppercase tracking-wider mb-1">
                 Section 2: Coming Soon
               </h3>
-              <p className="text-xs font-bold text-[#afafaf]">
+              <p className="text-xs font-bold text-[#C2C9CF] dark:text-[#afafaf]">
                 Complete all units in Section 1 to unlock intermediate German topics!
               </p>
             </div>

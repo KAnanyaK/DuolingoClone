@@ -9,11 +9,13 @@ import { Flame, Zap } from "lucide-react";
 export interface LessonCompleteProps {
   xpGained?: number;
   completedLessonId?: number;
+  skillId?: number;
 }
 
 export const LessonComplete: React.FC<LessonCompleteProps> = ({
   xpGained = 10,
   completedLessonId = 1,
+  skillId,
 }) => {
   const router = useRouter();
   const { streak, xp, setStats } = useUserStore();
@@ -37,6 +39,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
       body: JSON.stringify({
         xp_gained: xpGained,
         completed_lesson_id: completedLessonId,
+        skill_id: skillId || null,
       }),
     })
       .then((res) => {

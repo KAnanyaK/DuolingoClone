@@ -301,6 +301,7 @@ from datetime import date
 class ProgressPayload(BaseModel):
     xp_gained: int
     completed_lesson_id: int
+    skill_id: int | None = None
 
 
 @app.post("/api/users/{user_id}/progress")
@@ -315,7 +316,7 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
     # 1. Add xp_gained to total_xp
     user.xp = (user.xp or 0) + payload.xp_gained
 
-    # 2. Check last_active_date vs today
+    # 2. Strict Streak Check: increments strictly only once per calendar day
     today_str = date.today().isoformat()
     if not hasattr(user, "streak_days") or user.streak_days is None:
         user.streak_days = user.streak or 1
@@ -325,12 +326,53 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
         user.streak = user.streak_days
         user.last_active_date = today_str
 
+    # 3. Update skill status to 'completed' and unlock the next sequential skill in the path
+    # Find the target skill
+    target_skill = None
+    if payload.skill_id:
+        target_skill = db.query(models.Skill).filter(models.Skill.id == payload.skill_id).first()
+
+    if not target_skill and payload.completed_lesson_id:
+        # Look up skill via lesson
+        lesson = db.query(models.Lesson).filter(models.Lesson.id == payload.completed_lesson_id).first()
+        if lesson:
+            target_skill = db.query(models.Skill).filter(models.Skill.id == lesson.skill_id).first()
+
+    if not target_skill:
+        # Default to the currently active skill or first non-completed skill
+        target_skill = db.query(models.Skill).filter(models.Skill.status == "active").first()
+        if not target_skill:
+            target_skill = db.query(models.Skill).first()
+
+    if target_skill:
+        target_skill.status = "completed"
+        target_skill.progress = target_skill.total_lessons
+
+        # Query all skills sorted strictly by unit.order, skill.order
+        all_skills = (
+            db.query(models.Skill)
+            .join(models.Unit, models.Skill.unit_id == models.Unit.id)
+            .order_by(models.Unit.order.asc(), models.Skill.order.asc())
+            .all()
+        )
+
+        # Locate the current skill in the list and activate the next one if locked
+        for idx, s in enumerate(all_skills):
+            if s.id == target_skill.id:
+                if idx + 1 < len(all_skills):
+                    next_skill = all_skills[idx + 1]
+                    if next_skill.status == "locked":
+                        next_skill.status = "active"
+                        next_skill.progress = 0
+                break
+
     db.commit()
     db.refresh(user)
 
     return {
         "total_xp": user.xp,
         "streak_days": user.streak_days or user.streak,
+        "completed_skill_id": target_skill.id if target_skill else None,
     }
 
 
@@ -361,16 +403,10 @@ def get_course_path(course_id: int, db: Session = Depends(get_db)):
             }
 
             for s in unit.skills:
-                skill_status = s.status
-
-                # Strict Linear Progression: Unit 2 & Unit 3 skills remain strictly locked until final skill of Unit 1 is completed
-                if unit.order > 1 and not unit_1_completed:
-                    skill_status = "locked"
-
                 unit_dict["skills"].append({
                     "id": s.id,
                     "name": s.title,
-                    "status": skill_status,
+                    "status": s.status,
                     "progress": s.progress,
                     "total_lessons": s.total_lessons,
                     "icon": s.icon,

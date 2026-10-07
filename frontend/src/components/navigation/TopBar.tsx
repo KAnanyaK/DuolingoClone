@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useUserStore } from "@/store/useUserStore";
 import { HeartsModal } from "@/components/ui/HeartsModal";
+import { HeartsPopover } from "@/components/ui/HeartsPopover";
 import { StreakPopover } from "@/components/ui/StreakPopover";
+import { CourseSelectorPopover } from "@/components/navigation/CourseSelectorPopover";
 
 export interface TopBarProps {
   className?: string;
@@ -28,6 +30,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   } = useUserStore();
 
   const [isStreakPopoverOpen, setIsStreakPopoverOpen] = useState(false);
+  const [isHeartsPopoverOpen, setIsHeartsPopoverOpen] = useState(false);
+  const [isCoursePopoverOpen, setIsCoursePopoverOpen] = useState(false);
   const [timeLeftText, setTimeLeftText] = useState<string>("Wait to refill in 10 mins");
 
   // Rehydrate user state on mount
@@ -134,14 +138,34 @@ export const TopBar: React.FC<TopBarProps> = ({
       className={`sticky top-0 z-30 flex items-center justify-between border-b border-[#e5e5e5] bg-white px-4 py-3 sm:px-8 font-nunito ${className}`}
     >
       {/* Current Course Selector */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 relative">
         {showCourse && (
-          <button className="flex items-center gap-2 rounded-2xl border border-transparent px-3 py-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
-            <span className="text-2xl leading-none">{currentCourse.flag}</span>
-            <span className="hidden sm:inline font-extrabold text-sm uppercase tracking-wider text-[#4B4B4B]">
-              {currentCourse.title}
-            </span>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsCoursePopoverOpen((prev) => !prev)}
+              className="flex items-center gap-2.5 rounded-2xl border-2 border-transparent hover:border-[#e5e5e5] dark:hover:border-[#37464F] px-3 py-1.5 transition-all hover:bg-gray-100 dark:hover:bg-[#202F36] cursor-pointer active:scale-95"
+              title="Select language course"
+              aria-label="Course selector"
+            >
+              {/* German Flag Badge (Chunky vector with rounded corners, dark-red-gold stripes, and white outline) */}
+              <div className="relative w-9 h-6.5 rounded-lg overflow-hidden border-2 border-white dark:border-[#37464F] shadow-sm flex flex-col flex-shrink-0">
+                <div className="w-full h-1/3 bg-[#202F36]" />
+                <div className="w-full h-1/3 bg-[#FF4B4B]" />
+                <div className="w-full h-1/3 bg-[#FFC800]" />
+              </div>
+              <span className="hidden sm:inline font-black text-sm uppercase tracking-wider text-[#2A2A2A] dark:text-[#E5E5E5]">
+                {currentCourse.title}
+              </span>
+            </button>
+
+            {/* Course Selector Floating Popover */}
+            <CourseSelectorPopover
+              isOpen={isCoursePopoverOpen}
+              onClose={() => setIsCoursePopoverOpen(false)}
+              activeCourseId="german"
+            />
+          </div>
         )}
       </div>
 
@@ -156,28 +180,34 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Streak count"
             aria-label="Streak details"
           >
-            {/* Duolingo Flame Fire Symbol from screenshot */}
+            {/* Duolingo Flame Fire Symbol from screenshot (white badge outline, plump curled flame, bright yellow core teardrop) */}
             <svg
-              className="w-7 h-7 filter drop-shadow-sm"
+              className="w-8 h-8 filter drop-shadow-sm"
               viewBox="0 0 100 100"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* Outer white badge border */}
+              {/* Thick white rounded border outline from screenshot */}
               <path
-                d="M50 4C52 4 78 28 78 54C78 72 65 86 50 86C35 86 22 72 22 54C22 28 48 4 50 4Z"
+                d="M50 4C55 4 82 28 82 56C82 74 68 90 50 90C32 90 18 74 18 56C18 36 34 20 44 10C44 20 50 26 56 26C56 26 58 14 50 4Z"
                 fill="#FFFFFF"
+                stroke="#FFFFFF"
+                strokeWidth="6"
+                strokeLinejoin="round"
+                strokeLinecap="round"
               />
-              {/* Outer vibrant orange body */}
+              {/* Vibrant orange main fiery flame */}
               <path
-                d="M50 9C51.5 9 73 30 73 54C73 68 62 81 50 81C38 81 27 68 27 54C27 30 48.5 9 50 9Z"
+                d="M50 8C54 8 78 30 78 56C78 72 65 86 50 86C35 86 22 72 22 56C22 38 36 24 45 14C45 22 50 28 55 28C55 28 57 16 50 8Z"
                 fill="#FF9600"
               />
-              {/* Inner yellow teardrop core */}
+              {/* Bright yellow energetic teardrop core */}
               <path
-                d="M50 42C50 42 60 52 60 62C60 68 55.5 73 50 73C44.5 73 40 68 40 62C40 52 50 42 50 42Z"
+                d="M50 44C51 44 63 54 63 64C63 72 57 78 50 78C43 78 37 72 37 64C37 54 49 44 50 44Z"
                 fill="#FFC800"
               />
+              {/* Tiny luminous inner glimmer */}
+              <ellipse cx="49" cy="67" rx="5" ry="6" fill="#FFF275" opacity="0.85" />
             </svg>
             <span className="text-base sm:text-lg text-[#FF9600] font-black">{streak}</span>
           </button>
@@ -262,7 +292,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
 
         {/* Hearts & Plan B Cooldown Indicator - Red Heart with crisp white border */}
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           {hearts === 0 && (
             <span className="text-xs sm:text-sm font-black text-[#e5a800] bg-[#fff8e1] px-2.5 py-1 rounded-full border border-[#ffe082] whitespace-nowrap animate-pulse">
               {timeLeftText}
@@ -270,9 +300,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
 
           <div
-            onClick={() => setIsHeartsModalOpen(true)}
-            className="flex items-center gap-1.5 font-black text-[#FF4B4B] cursor-pointer hover:opacity-85 transition-opacity active:scale-95"
+            onClick={() => setIsHeartsPopoverOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 font-black text-[#FF4B4B] cursor-pointer hover:opacity-85 transition-opacity active:scale-95 p-1 rounded-2xl"
             title="Click to view Hearts"
+            aria-label="Hearts details"
           >
             {/* Red Heart with crisp white border from screenshot */}
             <svg
@@ -299,10 +330,16 @@ export const TopBar: React.FC<TopBarProps> = ({
             </svg>
             <span className="text-base sm:text-lg text-[#FF4B4B] font-black">{hearts}</span>
           </div>
+
+          {/* Floating Dialogue Box anchored directly to the heart icon */}
+          <HeartsPopover
+            isOpen={isHeartsPopoverOpen}
+            onClose={() => setIsHeartsPopoverOpen(false)}
+          />
         </div>
       </div>
 
-      {/* Out of Hearts / Refill Modal */}
+      {/* Out of Hearts Modal (Used when user runs out of hearts or clicks locked action) */}
       <HeartsModal
         isOpen={isHeartsModalOpen}
         onClose={() => setIsHeartsModalOpen(false)}

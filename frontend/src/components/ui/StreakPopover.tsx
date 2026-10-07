@@ -75,25 +75,27 @@ export const StreakPopover: React.FC<StreakPopoverProps> = ({
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* Outer white outline */}
+              {/* Thick white rounded border outline from screenshot */}
               <path
-                d="M50 8C50 8 68 28 68 45C68 55 60 62 50 62C40 62 32 55 32 45C32 28 50 8 50 8Z"
-                fill="none"
-              />
-              <path
-                d="M50 4C52 4 78 28 78 54C78 72 65 86 50 86C35 86 22 72 22 54C22 28 48 4 50 4Z"
+                d="M50 4C55 4 82 28 82 56C82 74 68 90 50 90C32 90 18 74 18 56C18 36 34 20 44 10C44 20 50 26 56 26C56 26 58 14 50 4Z"
                 fill="#FFFFFF"
+                stroke="#FFFFFF"
+                strokeWidth="6"
+                strokeLinejoin="round"
+                strokeLinecap="round"
               />
-              {/* Main orange flame body */}
+              {/* Vibrant orange main fiery flame */}
               <path
-                d="M50 9C51.5 9 73 30 73 54C73 68 62 81 50 81C38 81 27 68 27 54C27 30 48.5 9 50 9Z"
+                d="M50 8C54 8 78 30 78 56C78 72 65 86 50 86C35 86 22 72 22 56C22 38 36 24 45 14C45 22 50 28 55 28C55 28 57 16 50 8Z"
                 fill="#FF9600"
               />
-              {/* Inner yellow teardrop core */}
+              {/* Bright yellow energetic teardrop core */}
               <path
-                d="M50 42C50 42 60 52 60 62C60 68 55.5 73 50 73C44.5 73 40 68 40 62C40 52 50 42 50 42Z"
+                d="M50 44C51 44 63 54 63 64C63 72 57 78 50 78C43 78 37 72 37 64C37 54 49 44 50 44Z"
                 fill="#FFC800"
               />
+              {/* Tiny luminous inner glimmer */}
+              <ellipse cx="49" cy="67" rx="5" ry="6" fill="#FFF275" opacity="0.85" />
             </svg>
           </div>
         </div>

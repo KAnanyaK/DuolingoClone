@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   TranslateExercise,
   ExerciseData as TranslateExerciseData,
@@ -18,11 +18,9 @@ import {
   FillInBlankExercise,
   FillInBlankExerciseData,
 } from "@/components/exercise/FillInBlankExercise";
-import {
-  TypeAnswerExercise,
-  TypeAnswerExerciseData,
-} from "@/components/exercise/TypeAnswerExercise";
+import { TypeAnswerExercise, TypeAnswerExerciseData } from "@/components/exercise/TypeAnswerExercise";
 import { LessonComplete } from "@/components/exercise/LessonComplete";
+import { ExitConfirmationModal } from "@/components/exercise/ExitConfirmationModal";
 
 type ExerciseUnion =
   | ({ type: "translate" } & TranslateExerciseData)
@@ -38,8 +36,12 @@ interface LessonResponse {
   exercises: ExerciseUnion[];
 }
 
-export default function LessonPage() {
+function LessonContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawSkillId = searchParams.get("skillId");
+  const skillId = rawSkillId ? parseInt(rawSkillId, 10) : 1;
+
   const [exercises, setExercises] = useState<ExerciseUnion[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
@@ -50,8 +52,11 @@ export default function LessonPage() {
   const [isReviewPhase, setIsReviewPhase] = useState<boolean>(false);
   const [lessonProgress, setLessonProgress] = useState<number>(0);
 
+  // Exit Confirmation Modal state
+  const [isExitModalOpen, setIsExitModalOpen] = useState<boolean>(false);
+
   useEffect(() => {
-    fetch("http://localhost:8000/api/lessons/1")
+    fetch(`http://localhost:8000/api/lessons/${skillId}`)
       .then((res) => {
         if (!res.ok) throw new Error("API error");
         return res.json();
@@ -148,7 +153,7 @@ export default function LessonPage() {
 
   // If all exercises are finished, render the celebration view
   if (isCompleted) {
-    return <LessonComplete xpGained={10} completedLessonId={1} />;
+    return <LessonComplete xpGained={10} completedLessonId={skillId} skillId={skillId} />;
   }
 
   const currentExercise = exercises[currentIndex];
@@ -195,7 +200,16 @@ export default function LessonPage() {
     }
   };
 
-  const handleExit = () => {
+  const handleExitClick = () => {
+    setIsExitModalOpen(true);
+  };
+
+  const handleKeepLearning = () => {
+    setIsExitModalOpen(false);
+  };
+
+  const handleEndSession = () => {
+    setIsExitModalOpen(false);
     router.push("/");
   };
 
@@ -205,54 +219,84 @@ export default function LessonPage() {
     isReview: isReviewPhase,
     onComplete: handleComplete,
     onSkip: handleSkip,
-    onExit: handleExit,
+    onExit: handleExitClick,
   };
 
-  if (currentExercise.type === "translate") {
-    return (
-      <TranslateExercise
-        key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
-        exercise={currentExercise}
-        {...commonProps}
-      />
-    );
-  }
+  const renderCurrentExercise = () => {
+    if (currentExercise.type === "translate") {
+      return (
+        <TranslateExercise
+          key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
+          exercise={currentExercise}
+          {...commonProps}
+        />
+      );
+    }
 
-  if (currentExercise.type === "multiple_choice") {
-    return (
-      <MultipleChoiceExercise
-        key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
-        exercise={currentExercise}
-        {...commonProps}
-      />
-    );
-  }
+    if (currentExercise.type === "multiple_choice") {
+      return (
+        <MultipleChoiceExercise
+          key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
+          exercise={currentExercise}
+          {...commonProps}
+        />
+      );
+    }
 
-  if (currentExercise.type === "fill_blank") {
-    return (
-      <FillInBlankExercise
-        key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
-        exercise={currentExercise}
-        {...commonProps}
-      />
-    );
-  }
+    if (currentExercise.type === "fill_blank") {
+      return (
+        <FillInBlankExercise
+          key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
+          exercise={currentExercise}
+          {...commonProps}
+        />
+      );
+    }
 
-  if (currentExercise.type === "type_answer") {
+    if (currentExercise.type === "type_answer") {
+      return (
+        <TypeAnswerExercise
+          key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
+          exercise={currentExercise}
+          {...commonProps}
+        />
+      );
+    }
+
     return (
-      <TypeAnswerExercise
+      <MatchPairsExercise
         key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
         exercise={currentExercise}
         {...commonProps}
       />
     );
-  }
+  };
 
   return (
-    <MatchPairsExercise
-      key={`${currentExercise.id}-${isReviewPhase ? "rev" : "norm"}-${currentIndex}`}
-      exercise={currentExercise}
-      {...commonProps}
-    />
+    <>
+      {renderCurrentExercise()}
+      <ExitConfirmationModal
+        isOpen={isExitModalOpen}
+        onKeepLearning={handleKeepLearning}
+        onEndSession={handleEndSession}
+      />
+    </>
+  );
+}
+
+export default function LessonPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white font-nunito">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-[#58CC02] border-t-transparent rounded-full animate-spin" />
+            <p className="font-extrabold text-[#4B4B4B] text-lg">Loading lesson...</p>
+          </div>
+        </div>
+      }
+    >
+      <LessonContent />
+    </Suspense>
   );
 }

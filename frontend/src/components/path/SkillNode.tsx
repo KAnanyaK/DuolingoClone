@@ -55,7 +55,7 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
       return;
     }
 
-    router.push("/lesson");
+    router.push(`/lesson?skillId=${id}`);
   };
 
   // Auto-dismiss tooltip after 3 seconds or on outside click
@@ -142,7 +142,7 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
             isCompleted
               ? "bg-[#58CC02] text-white border-b-6 border-[#46a302] active:translate-y-1.5 active:border-b-0 hover:brightness-105 shadow-md"
               : isActive
-              ? "bg-[#58CC02] text-white border-b-6 border-[#46a302] active:translate-y-1.5 active:border-b-0 hover:brightness-105 shadow-md"
+              ? "bg-[#58CC02] text-white border-b-6 border-[#46a302] active:translate-y-1.5 active:border-b-0 hover:brightness-105 shadow-md animate-active-skill"
               : "bg-[#e5e5e5] text-[#afafaf] border-b-6 border-[#cecece] hover:brightness-95 active:translate-y-1 active:border-b-4 opacity-95"
           }`}
         >
