@@ -30,6 +30,18 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
 
+    // Clear any mid-lesson progress since lesson is now completed
+    if (typeof window !== "undefined") {
+      if (skillId) {
+        localStorage.removeItem(`duo_skill_progress_${skillId}`);
+        localStorage.removeItem(`duo_skill_exercise_idx_${skillId}`);
+      }
+      if (completedLessonId) {
+        localStorage.removeItem(`duo_skill_progress_${completedLessonId}`);
+        localStorage.removeItem(`duo_skill_exercise_idx_${completedLessonId}`);
+      }
+    }
+
     // Persist progress to SQLite database backend
     fetch("http://localhost:8000/api/users/1/progress", {
       method: "POST",

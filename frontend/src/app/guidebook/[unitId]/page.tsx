@@ -201,11 +201,10 @@ export default function GuidebookPage({ params }: GuidebookPageProps) {
               {vocabTable.map((row, idx) => (
                 <div
                   key={idx}
-                  className={`grid grid-cols-2 p-3.5 text-sm sm:text-base font-extrabold ${
-                    idx < vocabTable.length - 1
+                  className={`grid grid-cols-2 p-3.5 text-sm sm:text-base font-extrabold ${idx < vocabTable.length - 1
                       ? "border-b border-[#E5F5FD] dark:border-[#203742]"
                       : ""
-                  }`}
+                    }`}
                 >
                   <div className="text-[#1CB0F6]">{row.german}</div>
                   <div className="text-[#4B4B4B] dark:text-white">{row.english}</div>
@@ -213,7 +212,7 @@ export default function GuidebookPage({ params }: GuidebookPageProps) {
               ))}
             </div>
 
-            {/* Example sentence */}
+            {/* Example sentence 1 */}
             <div
               onClick={() => speakText("Kaffee oder Tee?")}
               className="flex items-start gap-3 cursor-pointer group w-fit"
@@ -231,6 +230,48 @@ export default function GuidebookPage({ params }: GuidebookPageProps) {
                 </span>
                 <span className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
                   Coffee or tea?
+                </span>
+              </div>
+            </div>
+            {/* Example sentence 2 */}
+            <div
+              onClick={() => speakText("Tee mit Zucker?")}
+              className="flex items-start gap-3 cursor-pointer group w-fit"
+            >
+              <button
+                type="button"
+                className="text-[#1CB0F6] group-hover:scale-110 active:scale-95 transition-transform p-0.5 mt-0.5"
+                aria-label="Listen to example"
+              >
+                <Volume2 className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              </button>
+              <div className="flex flex-col">
+                <span className="text-base sm:text-lg font-black text-[#4B4B4B] dark:text-white">
+                  Tee <span className="text-[#1CB0F6]">mit</span> Zucker?
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Tea with sugar?
+                </span>
+              </div>
+            </div>
+            {/* Example sentence 3 */}
+            <div
+              onClick={() => speakText("Brot und Butter?")}
+              className="flex items-start gap-3 cursor-pointer group w-fit"
+            >
+              <button
+                type="button"
+                className="text-[#1CB0F6] group-hover:scale-110 active:scale-95 transition-transform p-0.5 mt-0.5"
+                aria-label="Listen to example"
+              >
+                <Volume2 className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              </button>
+              <div className="flex flex-col">
+                <span className="text-base sm:text-lg font-black text-[#4B4B4B] dark:text-white">
+                  Brot <span className="text-[#1CB0F6]">und</span> Butter?
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Bread and butter?
                 </span>
               </div>
             </div>

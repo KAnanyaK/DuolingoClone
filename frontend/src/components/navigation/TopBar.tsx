@@ -138,7 +138,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-30 flex items-center justify-between border-b border-[#e5e5e5] bg-white px-4 py-3 sm:px-8 font-nunito ${className}`}
+      className={`sticky top-0 z-30 flex items-center justify-between border-b border-[#e5e5e5] dark:border-[#263E4B] bg-white dark:bg-[#131F24] text-[#4B4B4B] dark:text-[#E5E5E5] px-4 py-3 sm:px-8 font-nunito transition-colors duration-200 ${className}`}
     >
       {/* Current Course Selector */}
       <div className="flex items-center gap-3 relative">

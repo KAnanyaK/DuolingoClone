@@ -3,11 +3,15 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useUserStore } from "@/store/useUserStore";
+import { SuperBanner } from "@/components/ui/SuperBanner";
+import { SuperSidebarCard } from "@/components/ui/SuperSidebarCard";
+import { SuperModal } from "@/components/ui/SuperModal";
 
 export default function ShopPage() {
   const { hearts, gems, refillHearts, setStats } = useUserStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSuperModalOpen, setIsSuperModalOpen] = useState(false);
 
   const isFullHearts = hearts >= 5;
   const canAfford = gems >= 350;
@@ -53,15 +57,22 @@ export default function ShopPage() {
 
   return (
     <AppLayout showTopBar={true}>
-      <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 font-nunito select-none">
-        {errorMessage && (
-          <div className="mb-6 p-4 rounded-2xl bg-[#FF4B4B]/10 border-2 border-[#FF4B4B] text-[#FF4B4B] font-bold text-sm text-center">
-            {errorMessage}
-          </div>
-        )}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-nunito select-none flex flex-col lg:flex-row gap-8 justify-center items-start">
+        {/* Main Shop Column */}
+        <div className="flex-1 max-w-2xl w-full">
+          {errorMessage && (
+            <div className="mb-6 p-4 rounded-2xl bg-[#FF4B4B]/10 border-2 border-[#FF4B4B] text-[#FF4B4B] font-bold text-sm text-center">
+              {errorMessage}
+            </div>
+          )}
 
-        {/* SECTION 1: HEARTS */}
-        <div className="mb-10">
+          {/* Super Duolingo Promotional Banner */}
+          <div className="mb-8">
+            <SuperBanner onUpgradeClick={() => setIsSuperModalOpen(true)} />
+          </div>
+
+          {/* SECTION 1: HEARTS */}
+          <div className="mb-10">
           <h1 className="text-2xl font-black text-[#4B4B4B] dark:text-white mb-6">
             Hearts
           </h1>
@@ -160,6 +171,7 @@ export default function ShopPage() {
               <div className="flex-shrink-0">
                 <button
                   type="button"
+                  onClick={() => setIsSuperModalOpen(true)}
                   className="px-5 sm:px-7 py-3 rounded-2xl border-2 border-[#E5E5E5] dark:border-[#37464F] bg-transparent text-[#A435F0] hover:bg-[#A435F0]/10 font-black text-xs sm:text-sm uppercase tracking-wider transition-all cursor-pointer shadow-xs select-none"
                 >
                   FREE TRIAL
@@ -314,6 +326,18 @@ export default function ShopPage() {
           </div>
         </div>
       </div>
+
+      {/* Right Sidebar on Desktop */}
+      <div className="hidden lg:flex w-72 lg:w-80 flex-col gap-4 flex-shrink-0 sticky top-6">
+        <SuperSidebarCard onUpgradeClick={() => setIsSuperModalOpen(true)} />
+      </div>
+    </div>
+
+      {/* Super Duolingo Interactive Modal */}
+      <SuperModal
+        isOpen={isSuperModalOpen}
+        onClose={() => setIsSuperModalOpen(false)}
+      />
     </AppLayout>
   );
 }

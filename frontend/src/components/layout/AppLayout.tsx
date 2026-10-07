@@ -13,7 +13,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   showTopBar = true,
 }) => {
   return (
-    <div className="min-h-screen flex bg-white font-nunito">
+    <div className="min-h-screen flex bg-white dark:bg-[#131F24] text-[#4B4B4B] dark:text-[#E5E5E5] font-nunito transition-colors duration-200">
       {/* Desktop Sidebar */}
       <Sidebar />
 

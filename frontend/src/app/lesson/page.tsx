@@ -55,6 +55,7 @@ function LessonContent() {
   // Exit Confirmation Modal state
   const [isExitModalOpen, setIsExitModalOpen] = useState<boolean>(false);
 
+  // 1. Fetch exercises on mount
   useEffect(() => {
     fetch(`http://localhost:8000/api/lessons/${skillId}`)
       .then((res) => {
@@ -130,56 +131,38 @@ function LessonContent() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [skillId]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white font-nunito">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-[#58CC02] border-t-transparent rounded-full animate-spin" />
-          <p className="font-extrabold text-[#4B4B4B] text-lg">Loading lesson...</p>
-        </div>
-      </div>
-    );
-  }
+  // 2. Restore in-progress state if user previously exited mid-lesson (Hook MUST run before any early return)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedProg = localStorage.getItem(`duo_skill_progress_${skillId}`);
+      const savedIdx = localStorage.getItem(`duo_skill_exercise_idx_${skillId}`);
+      if (savedProg) {
+        const parsed = parseFloat(savedProg);
+        if (!isNaN(parsed) && parsed > 0 && parsed < 100) {
+          setLessonProgress(parsed);
+        }
+      }
+      if (savedIdx && exercises.length > 0) {
+        const parsedIdx = parseInt(savedIdx, 10);
+        if (!isNaN(parsedIdx) && parsedIdx > 0 && parsedIdx < exercises.length) {
+          setCurrentIndex(parsedIdx);
+        }
+      }
+    }
+  }, [skillId, exercises.length]);
 
-  if (exercises.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white font-nunito">
-        <p className="font-bold text-[#FF4B4B]">No exercises found.</p>
-      </div>
-    );
-  }
-
-  // If all exercises are finished, render the celebration view
-  if (isCompleted) {
-    return <LessonComplete xpGained={10} completedLessonId={skillId} skillId={skillId} />;
-  }
-
-  const currentExercise = exercises[currentIndex];
-
-  // Calculate target progress upon completing current question correctly
-  const targetCompletedPercent = Math.min(
-    100,
-    lessonProgress + (isReviewPhase ? 15 : 20)
-  );
-
-  // When a user successfully answers the current question
-  const handleComplete = () => {
-    const nextProg = Math.min(100, lessonProgress + (isReviewPhase ? 15 : 20));
-    setLessonProgress(nextProg);
-    advanceQueue();
-  };
-
-  // When a user skips the current question
-  const handleSkip = () => {
-    // Progress increases by 5% when skipped
-    setLessonProgress((prev) => Math.min(100, prev + 5));
-
-    // Save to skipped queue if not already in review phase (or re-queue if skipped during review)
-    setSkippedQueue((prev) => [...prev, currentExercise]);
-
-    advanceQueue();
+  const syncProgress = (progressVal: number, nextIdx: number) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`duo_skill_progress_${skillId}`, progressVal.toString());
+      localStorage.setItem(`duo_skill_exercise_idx_${skillId}`, nextIdx.toString());
+    }
+    fetch(`http://localhost:8000/api/skills/${skillId}/mid-progress`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress_percent: progressVal }),
+    }).catch(() => {});
   };
 
   const advanceQueue = () => {
@@ -200,6 +183,25 @@ function LessonContent() {
     }
   };
 
+  // When a user successfully answers the current question
+  const handleComplete = () => {
+    const nextProg = Math.min(100, lessonProgress + (isReviewPhase ? 15 : 20));
+    setLessonProgress(nextProg);
+    syncProgress(nextProg, currentIndex + 1);
+    advanceQueue();
+  };
+
+  // When a user skips the current question
+  const handleSkip = () => {
+    const nextProg = Math.min(100, lessonProgress + 5);
+    setLessonProgress(nextProg);
+    syncProgress(nextProg, currentIndex + 1);
+
+    // Save to skipped queue if not already in review phase (or re-queue if skipped during review)
+    setSkippedQueue((prev) => [...prev, exercises[currentIndex]]);
+    advanceQueue();
+  };
+
   const handleExitClick = () => {
     setIsExitModalOpen(true);
   };
@@ -210,8 +212,46 @@ function LessonContent() {
 
   const handleEndSession = () => {
     setIsExitModalOpen(false);
+    syncProgress(lessonProgress, currentIndex);
     router.push("/learn");
   };
+
+  // Calculate target progress upon completing current question correctly
+  const targetCompletedPercent = Math.min(
+    100,
+    lessonProgress + (isReviewPhase ? 15 : 20)
+  );
+
+  // Early returns placed strictly AFTER all hooks are executed:
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white font-nunito">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-[#58CC02] border-t-transparent rounded-full animate-spin" />
+          <p className="font-extrabold text-[#4B4B4B] text-lg">Loading lesson...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (exercises.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white font-nunito">
+        <p className="font-bold text-[#FF4B4B]">No exercises found.</p>
+      </div>
+    );
+  }
+
+  // If all exercises are finished, render the celebration view and clear mid-lesson storage
+  if (isCompleted) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(`duo_skill_progress_${skillId}`);
+      localStorage.removeItem(`duo_skill_exercise_idx_${skillId}`);
+    }
+    return <LessonComplete xpGained={10} completedLessonId={skillId} skillId={skillId} />;
+  }
+
+  const currentExercise = exercises[currentIndex];
 
   const commonProps = {
     progressPercent: lessonProgress,

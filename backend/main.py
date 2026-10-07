@@ -363,11 +363,14 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
         # Locate the current skill in the list and activate the next one if locked
         for idx, s in enumerate(all_skills):
             if s.id == target_skill.id:
+                # Clear any mid-lesson progress since skill is now fully completed
+                skill_mid_progress.pop(target_skill.id, None)
                 if idx + 1 < len(all_skills):
                     next_skill = all_skills[idx + 1]
                     if next_skill.status == "locked":
                         next_skill.status = "active"
                         next_skill.progress = 0
+                        skill_mid_progress[next_skill.id] = 0.0
                 break
 
     db.commit()
@@ -377,6 +380,21 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
         "total_xp": user.xp,
         "streak_days": user.streak_days or user.streak,
         "completed_skill_id": target_skill.id if target_skill else None,
+    }
+
+
+# Store for in-flight / mid-lesson progress for active skills
+skill_mid_progress: dict = {}
+
+
+@app.post("/api/skills/{skill_id}/mid-progress")
+def save_skill_mid_progress(skill_id: int, payload: dict):
+    progress_val = float(payload.get("progress_percent", 0))
+    skill_mid_progress[skill_id] = max(0.0, min(100.0, progress_val))
+    return {
+        "skill_id": skill_id,
+        "progress_percent": skill_mid_progress[skill_id],
+        "message": "Mid-lesson progress saved",
     }
 
 
@@ -414,6 +432,7 @@ def get_course_path(course_id: int, db: Session = Depends(get_db)):
                     "progress": s.progress,
                     "total_lessons": s.total_lessons,
                     "icon": s.icon,
+                    "mid_progress": skill_mid_progress.get(s.id, 0.0),
                 })
 
             units_data.append(unit_dict)
@@ -427,7 +446,7 @@ def get_course_path(course_id: int, db: Session = Depends(get_db)):
                 "order": 1,
                 "skills": [
                     {"id": 1, "name": "Greetings", "status": "completed", "progress": 4, "total_lessons": 4, "icon": "star"},
-                    {"id": 2, "name": "Basics 1", "status": "active", "progress": 1, "total_lessons": 4, "icon": "book"},
+                    {"id": 2, "name": "Basics 1", "status": "active", "progress": 0, "total_lessons": 4, "icon": "book"},
                     {"id": 3, "name": "Phrases", "status": "locked", "progress": 0, "total_lessons": 4, "icon": "message"},
                 ],
             },

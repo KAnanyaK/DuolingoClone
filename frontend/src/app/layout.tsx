@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col font-nunito bg-white text-ink select-none">
+      <body className="min-h-full flex flex-col font-nunito bg-white dark:bg-[#131F24] text-ink dark:text-[#E5E5E5] select-none transition-colors duration-200">
         <Script
           id="duo-theme-script"
           strategy="beforeInteractive"

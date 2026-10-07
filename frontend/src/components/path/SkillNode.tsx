@@ -13,6 +13,7 @@ export interface SkillNodeProps {
   status: SkillStatus;
   progress?: number;
   totalLessons?: number;
+  progressPercent?: number;
   icon?: string;
   className?: string;
 }
@@ -23,6 +24,7 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
   status,
   progress = 0,
   totalLessons = 4,
+  progressPercent,
   icon = "star",
   className = "",
 }) => {
@@ -36,7 +38,12 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
   // Radius = 48, Circumference = 2 * PI * 48 ≈ 301.6
   const radius = 48;
   const circumference = 2 * Math.PI * radius;
-  const progressFraction = totalLessons > 0 ? Math.min(1, Math.max(0, progress / totalLessons)) : 0;
+  const progressFraction =
+    progressPercent !== undefined && progressPercent !== null
+      ? Math.min(1, Math.max(0, progressPercent / 100))
+      : totalLessons > 0
+      ? Math.min(1, Math.max(0, progress / totalLessons))
+      : 0;
   const strokeDashoffset = circumference - progressFraction * circumference;
 
   const { hearts, setIsHeartsModalOpen } = useUserStore();

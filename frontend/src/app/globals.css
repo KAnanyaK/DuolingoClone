@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-feather-green: #58CC02;
   --color-feather-green-dark: #46a302;
@@ -43,10 +45,6 @@ html.dark nav,
 html.dark header {
   background-color: #131F24 !important;
   border-color: #37464F !important;
-}
-
-html.dark .bg-white {
-  background-color: #131F24 !important;
 }
 
 html.dark .text-\[\#4B4B4B\],

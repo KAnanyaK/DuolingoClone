@@ -50,7 +50,7 @@ def seed():
 
         u1_skills = [
             Skill(unit_id=unit1.id, title="Greetings", icon="star", order=1, status="completed", progress=4, total_lessons=4),
-            Skill(unit_id=unit1.id, title="Basics 1", icon="book", order=2, status="active", progress=1, total_lessons=4),
+            Skill(unit_id=unit1.id, title="Basics 1", icon="book", order=2, status="active", progress=0, total_lessons=4),
             Skill(unit_id=unit1.id, title="Phrases", icon="message", order=3, status="locked", progress=0, total_lessons=4),
         ]
         db.add_all(u1_skills)

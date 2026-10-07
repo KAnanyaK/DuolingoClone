@@ -9,6 +9,8 @@ import { BookOpen, Lock } from "lucide-react";
 import { DancingOwl } from "@/components/mascots/DancingOwl";
 import { EatingPanda } from "@/components/mascots/EatingPanda";
 import { PainterMascot } from "@/components/mascots/PainterMascot";
+import { SuperSidebarCard } from "@/components/ui/SuperSidebarCard";
+import { SuperModal } from "@/components/ui/SuperModal";
 
 interface SkillItem {
   id: number;
@@ -17,6 +19,7 @@ interface SkillItem {
   progress: number;
   total_lessons: number;
   icon: string;
+  mid_progress?: number;
 }
 
 interface UnitItem {
@@ -36,6 +39,25 @@ interface PathData {
 export default function LearnPage() {
   const [pathData, setPathData] = useState<PathData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clientMidProgress, setClientMidProgress] = useState<Record<number, number>>({});
+  const [isSuperModalOpen, setIsSuperModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored: Record<number, number> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("duo_skill_progress_")) {
+          const skillId = parseInt(key.replace("duo_skill_progress_", ""), 10);
+          const val = parseFloat(localStorage.getItem(key) || "0");
+          if (!isNaN(skillId) && !isNaN(val)) {
+            stored[skillId] = val;
+          }
+        }
+      }
+      setClientMidProgress(stored);
+    }
+  }, []);
 
   useEffect(() => {
     fetch("http://localhost:8000/api/courses/1/path", { cache: "no-store" })
@@ -45,6 +67,21 @@ export default function LearnPage() {
       })
       .then((data: PathData) => {
         setPathData(data);
+        if (typeof window !== "undefined") {
+          data.units.forEach((u) => {
+            u.skills.forEach((s) => {
+              if (s.status === "active" && s.progress === 0 && (!s.mid_progress || s.mid_progress === 0)) {
+                localStorage.removeItem(`duo_skill_progress_${s.id}`);
+                localStorage.removeItem(`duo_skill_exercise_idx_${s.id}`);
+                setClientMidProgress((prev) => {
+                  const copy = { ...prev };
+                  delete copy[s.id];
+                  return copy;
+                });
+              }
+            });
+          });
+        }
       })
       .catch(() => {
         // Fallback Section 1 with 3 units
@@ -59,7 +96,7 @@ export default function LearnPage() {
               order: 1,
               skills: [
                 { id: 1, name: "Greetings", status: "completed", progress: 4, total_lessons: 4, icon: "star" },
-                { id: 2, name: "Basics 1", status: "active", progress: 1, total_lessons: 4, icon: "book" },
+                { id: 2, name: "Basics 1", status: "active", progress: 0, total_lessons: 4, icon: "book" },
                 { id: 3, name: "Phrases", status: "locked", progress: 0, total_lessons: 4, icon: "message" },
               ],
             },
@@ -105,8 +142,10 @@ export default function LearnPage() {
 
   return (
     <AppLayout showTopBar={true}>
-      <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 flex flex-col items-center">
-        {loading ? (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-nunito select-none flex flex-col lg:flex-row gap-8 justify-center items-start">
+        {/* Main Learning Path Column */}
+        <div className="flex-1 max-w-2xl w-full flex flex-col items-center">
+          {loading ? (
           <div className="py-20 flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-[#58CC02] border-t-transparent rounded-full animate-spin" />
             <p className="font-extrabold text-[#777777]">Loading learning path...</p>
@@ -191,6 +230,16 @@ export default function LearnPage() {
                     {unit.skills.map((skill, index) => {
                       const offsetClass = zigzagOffsets[index % zigzagOffsets.length];
 
+                      // Mid-lesson progress sync for active skill:
+                      // Priority 1: localStorage client sync (instant, reactive to user exiting mid-lesson)
+                      // Priority 2: API skill.mid_progress
+                      const midProgress =
+                        clientMidProgress[skill.id] !== undefined
+                          ? clientMidProgress[skill.id]
+                          : skill.mid_progress !== undefined
+                          ? skill.mid_progress
+                          : undefined;
+
                       return (
                         <div
                           key={skill.id}
@@ -202,6 +251,7 @@ export default function LearnPage() {
                             status={skill.status}
                             progress={skill.progress}
                             totalLessons={skill.total_lessons}
+                            progressPercent={skill.status === "active" ? midProgress : undefined}
                             icon={skill.icon}
                           />
                         </div>
@@ -226,7 +276,24 @@ export default function LearnPage() {
             </div>
           </>
         )}
+        </div>
+
+        {/* Right Sidebar on Desktop */}
+        <div className="hidden lg:flex w-72 lg:w-80 flex-col gap-4 flex-shrink-0 sticky top-6">
+          <SuperSidebarCard onUpgradeClick={() => setIsSuperModalOpen(true)} />
+        </div>
+
+        {/* Mobile / Tablet Card at Bottom */}
+        <div className="lg:hidden w-full max-w-2xl mt-4">
+          <SuperSidebarCard onUpgradeClick={() => setIsSuperModalOpen(true)} />
+        </div>
       </div>
+
+      {/* Super Duolingo Interactive Modal */}
+      <SuperModal
+        isOpen={isSuperModalOpen}
+        onClose={() => setIsSuperModalOpen(false)}
+      />
     </AppLayout>
   );
 }
