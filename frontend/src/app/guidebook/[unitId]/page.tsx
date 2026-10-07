@@ -56,7 +56,7 @@ export default function GuidebookPage({ params }: GuidebookPageProps) {
 
   return (
     <AppLayout showTopBar={false}>
-      <div className="min-h-screen bg-[#F7F7F7] dark:bg-[#131F24] font-nunito transition-colors duration-200">
+      <div className="min-h-screen bg-white dark:bg-[#131F24] font-nunito transition-colors duration-200">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* Top Back Navigation Button */}
           <div className="pb-4 mb-4 border-b border-[#E5E5E5] dark:border-[#202F36]">

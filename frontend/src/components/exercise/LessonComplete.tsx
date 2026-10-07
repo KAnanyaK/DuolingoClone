@@ -75,9 +75,9 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
         });
       })
       .catch(() => {
-        // Fallback calculation if backend unreachable
+        // Fallback calculation if backend unreachable (preserve current streak)
         const targetXp = xp + xpGained;
-        const targetStreak = streak + 1;
+        const targetStreak = streak;
         setDisplayXp(targetXp);
         setDisplayStreak(targetStreak);
         setStats({

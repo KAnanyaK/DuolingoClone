@@ -35,17 +35,74 @@ export const StreakPopover: React.FC<StreakPopoverProps> = ({
 
   if (!isOpen) return null;
 
-  // Days of week: S M T W T F S
-  // Let's mark Wednesday (or current day) as active with the check mark like in the screenshot
+  // Week Tracker: Sunday (0) to Saturday (6).
+  // Resets at end of Saturday 11:59:59 PM (i.e. start of Sunday midnight).
+  const getWeeklyCompletedDays = (): number[] => {
+    if (typeof window === "undefined") return [];
+
+    const now = new Date();
+    // Calculate the start of the current week (Sunday at 00:00:00:000)
+    const currentSunday = new Date(now);
+    currentSunday.setDate(now.getDate() - now.getDay());
+    currentSunday.setHours(0, 0, 0, 0);
+    const weekKey = `duo_week_${currentSunday.getTime()}`;
+
+    // Check if we have stored progress for this week
+    const stored = localStorage.getItem("duo_weekly_completed_data");
+    let activeDays: number[] = [];
+
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.weekKey === weekKey && Array.isArray(parsed.days)) {
+          activeDays = parsed.days;
+        }
+      } catch {
+        activeDays = [];
+      }
+    }
+
+    const todayDay = now.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+
+    // If streakCount is 0, no days completed
+    if (streakCount <= 0) {
+      return [];
+    }
+
+    // Determine the consecutive streak days ending on the active day.
+    // For example, if streakCount is 2 and today is Wednesday (3), the 2 days are Tuesday (2) and Wednesday (3).
+    const calculatedDays: number[] = [];
+    for (let i = 0; i < streakCount && i < 7; i++) {
+      const d = todayDay - i;
+      if (d >= 0) {
+        calculatedDays.push(d);
+      }
+    }
+
+    // Save updated days for this week
+    localStorage.setItem(
+      "duo_weekly_completed_data",
+      JSON.stringify({ weekKey, days: calculatedDays })
+    );
+
+    return calculatedDays;
+  };
+
+  const completedDays = getWeeklyCompletedDays();
+
+  // Days of week: Sunday (0) to Saturday (6)
   const daysOfWeek = [
-    { label: "S", active: false },
-    { label: "M", active: false },
-    { label: "T", active: false },
-    { label: "W", active: true },
-    { label: "T", active: false },
-    { label: "F", active: false },
-    { label: "S", active: false },
-  ];
+    { label: "S", dayIdx: 0 },
+    { label: "M", dayIdx: 1 },
+    { label: "T", dayIdx: 2 },
+    { label: "W", dayIdx: 3 },
+    { label: "T", dayIdx: 4 },
+    { label: "F", dayIdx: 5 },
+    { label: "S", dayIdx: 6 },
+  ].map((d) => ({
+    label: d.label,
+    active: completedDays.includes(d.dayIdx),
+  }));
 
   return (
     <div

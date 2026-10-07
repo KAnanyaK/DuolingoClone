@@ -316,18 +316,7 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
     # 1. Add xp_gained to total_xp
     user.xp = (user.xp or 0) + payload.xp_gained
 
-    # 2. Strict Streak Check: increments strictly only once per calendar day
-    today_str = date.today().isoformat()
-    if not hasattr(user, "streak_days") or user.streak_days is None:
-        user.streak_days = user.streak or 1
-
-    if user.last_active_date != today_str:
-        user.streak_days = (user.streak_days or 0) + 1
-        user.streak = user.streak_days
-        user.last_active_date = today_str
-
-    # 3. Update skill status to 'completed' and unlock the next sequential skill in the path
-    # Find the target skill
+    # Find the target skill first
     target_skill = None
     if payload.skill_id:
         target_skill = db.query(models.Skill).filter(models.Skill.id == payload.skill_id).first()
@@ -344,7 +333,22 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
         if not target_skill:
             target_skill = db.query(models.Skill).first()
 
-    if target_skill:
+    # Track if the skill was previously active before this completion
+    was_active_skill = (target_skill is not None and target_skill.status == "active")
+
+    # 2. Strict Streak Check:
+    # Only increments for completing an ACTIVE skill (not an already completed skill) AND strictly once per new calendar day!
+    today_str = date.today().isoformat()
+    if not hasattr(user, "streak_days") or user.streak_days is None:
+        user.streak_days = user.streak or 1
+
+    if was_active_skill and user.last_active_date != today_str:
+        user.streak_days = (user.streak_days or 0) + 1
+        user.streak = user.streak_days
+        user.last_active_date = today_str
+
+    # 3. Update skill status to 'completed' and unlock the next sequential skill in the path
+    if target_skill and was_active_skill:
         target_skill.status = "completed"
         target_skill.progress = target_skill.total_lessons
 

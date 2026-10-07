@@ -63,14 +63,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           ? data.hearts
           : 5;
 
-        const storedXp = localStorage.getItem("duo_user_xp");
-        const defaultCalculatedXp = 50; // 5 completed lessons * 10 XP
-        const effectiveXp =
-          typeof data.total_xp === "number" && data.total_xp > 0
-            ? data.total_xp
-            : storedXp !== null
-            ? parseInt(storedXp, 10)
-            : defaultCalculatedXp;
+        const apiXp = typeof data.total_xp === "number" ? data.total_xp : 50;
+        localStorage.setItem("duo_user_xp", apiXp.toString());
+        const effectiveXp = apiXp;
 
         const storedGems = localStorage.getItem("duo_user_gems");
         const effectiveGems =
@@ -80,10 +75,13 @@ export const TopBar: React.FC<TopBarProps> = ({
             ? parseInt(storedGems, 10)
             : 500;
 
+        const apiStreak = typeof data.streak_days === "number" ? data.streak_days : (data.streak || 1);
+        localStorage.setItem("duo_user_streak", apiStreak.toString());
+
         setStats({
           hearts: parsedHearts,
           xp: effectiveXp,
-          streak: typeof data.streak_days === "number" ? data.streak_days : data.streak || 1,
+          streak: apiStreak,
           gems: effectiveGems,
           heartsCooldownEndTime: activeCooldown,
         });
@@ -91,9 +89,12 @@ export const TopBar: React.FC<TopBarProps> = ({
       .catch(() => {
         const storedGems = localStorage.getItem("duo_user_gems");
         const fallbackGems = storedGems !== null ? parseInt(storedGems, 10) : 500;
+        const storedStreakVal = localStorage.getItem("duo_user_streak");
+        const fallbackStreak = storedStreakVal ? parseInt(storedStreakVal, 10) : 1;
         setStats({
           gems: fallbackGems,
           hearts: activeCooldown ? 0 : 5,
+          streak: fallbackStreak,
           heartsCooldownEndTime: activeCooldown,
         });
       })

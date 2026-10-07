@@ -78,6 +78,19 @@ const setStoredXp = (xp: number) => {
   localStorage.setItem("duo_user_xp", xp.toString());
 };
 
+const getStoredStreak = (): number => {
+  if (typeof window === "undefined") return 1;
+  const val = localStorage.getItem("duo_user_streak");
+  if (!val) return 1;
+  const parsed = parseInt(val, 10);
+  return isNaN(parsed) ? 1 : parsed;
+};
+
+const setStoredStreak = (streak: number) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("duo_user_streak", streak.toString());
+};
+
 const getStoredGems = (): number => {
   if (typeof window === "undefined") return 500;
   const val = localStorage.getItem("duo_user_gems");
@@ -110,7 +123,7 @@ export const useUserStore = create<UserState>((set) => ({
   hearts: 5,
   maxHearts: 5,
   xp: 50, // 5 completed lessons * 10 XP
-  streak: 1,
+  streak: getStoredStreak(),
   gems: 500,
   isHeartsModalOpen: false,
   heartsCooldownEndTime: null,
@@ -200,9 +213,13 @@ export const useUserStore = create<UserState>((set) => ({
       };
     }),
   incrementStreak: () =>
-    set((state) => ({
-      streak: state.streak + 1,
-    })),
+    set((state) => {
+      const nextStreak = state.streak + 1;
+      setStoredStreak(nextStreak);
+      return {
+        streak: nextStreak,
+      };
+    }),
   addGems: (amount) =>
     set((state) => {
       const nextGems = Math.max(0, state.gems + amount);
@@ -221,6 +238,9 @@ export const useUserStore = create<UserState>((set) => ({
       }
       if (typeof stats.gems === "number") {
         setStoredGems(stats.gems);
+      }
+      if (typeof stats.streak === "number") {
+        setStoredStreak(stats.streak);
       }
       if (stats.heartsCooldownEndTime !== undefined) {
         setStoredCooldown(stats.heartsCooldownEndTime);
