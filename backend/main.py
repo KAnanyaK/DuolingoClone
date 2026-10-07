@@ -66,6 +66,7 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
         "streak_days": streak_val,
         "streak": streak_val,
         "gems": user.gems,
+        "streak_freeze_active": bool(user.streak_freeze_active) if hasattr(user, "streak_freeze_active") else False,
         "current_course_id": user.current_course_id,
     }
 
@@ -105,6 +106,71 @@ def sync_user_hearts(user_id: int, payload: dict, db: Session = Depends(get_db))
     db.commit()
     db.refresh(user)
     return {"user_id": user.id, "hearts": user.hearts}
+
+
+@app.post("/api/users/{user_id}/equip-freeze")
+def equip_streak_freeze(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        user = db.query(models.User).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+    if user.gems < 100:
+        raise HTTPException(status_code=400, detail="Not enough gems! Requires 100 gems.")
+
+    user.gems -= 100
+    user.streak_freeze_active = True
+    db.commit()
+    db.refresh(user)
+
+    streak_val = user.streak_days if hasattr(user, "streak_days") and user.streak_days else user.streak
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "hearts": user.hearts,
+        "total_xp": user.xp,
+        "xp": user.xp,
+        "streak_days": streak_val,
+        "streak": streak_val,
+        "gems": user.gems,
+        "streak_freeze_active": bool(user.streak_freeze_active),
+        "current_course_id": user.current_course_id,
+        "message": "Streak freeze successfully equipped",
+    }
+
+
+@app.post("/api/users/{user_id}/unequip-freeze")
+def unequip_streak_freeze(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        user = db.query(models.User).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+    user.streak_freeze_active = False
+    user.gems += 100
+    db.commit()
+    db.refresh(user)
+
+    streak_val = user.streak_days if hasattr(user, "streak_days") and user.streak_days else user.streak
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "hearts": user.hearts,
+        "total_xp": user.xp,
+        "xp": user.xp,
+        "streak_days": streak_val,
+        "streak": streak_val,
+        "gems": user.gems,
+        "streak_freeze_active": bool(user.streak_freeze_active),
+        "current_course_id": user.current_course_id,
+        "message": "Streak freeze successfully unequipped and refunded",
+    }
 
 
 @app.get("/api/leaderboard")
@@ -239,6 +305,7 @@ def get_mock_lesson(lesson_id: int):
                 "type": "translate",
                 "prompt": "Translate this sentence",
                 "question": "Guten Morgen",
+                "can_skip": True,
                 "answer_data": {
                     "correct_answer": ["Good", "morning"],
                     "word_bank": ["Good", "night", "morning", "hello", "apple"],
@@ -249,6 +316,7 @@ def get_mock_lesson(lesson_id: int):
                 "type": "multiple_choice",
                 "prompt": "Select the correct translation",
                 "question": "The apple",
+                "can_skip": True,
                 "answer_data": {
                     "options": [
                         {"id": 1, "text": "Der Apfel"},
@@ -260,8 +328,21 @@ def get_mock_lesson(lesson_id: int):
             },
             {
                 "id": 3,
+                "type": "pronunciation",
+                "prompt": "Say Guten Morgen",
+                "question": "Guten Morgen",
+                "phonetic": "ˈɡuːtn̩ ˈmɔʁɡn̩",
+                "translation": "Good morning",
+                "can_skip": False,
+                "answer_data": {
+                    "target_text": "Guten Morgen",
+                },
+            },
+            {
+                "id": 4,
                 "type": "match_pairs",
                 "prompt": "Tap the matching pairs",
+                "can_skip": True,
                 "answer_data": {
                     "pairs": [
                         {"id": 1, "german": "Junge", "english": "Boy"},
@@ -272,20 +353,22 @@ def get_mock_lesson(lesson_id: int):
                 },
             },
             {
-                "id": 4,
+                "id": 5,
                 "type": "fill_blank",
                 "prompt": "Fill in the missing word",
                 "sentence": "Der ___ frisst den Apfel.",
+                "can_skip": True,
                 "answer_data": {
                     "word_bank": ["Junge", "Apfel", "Wasser", "Brot"],
                     "correct_answer": "Junge",
                 },
             },
             {
-                "id": 5,
+                "id": 6,
                 "type": "type_answer",
                 "prompt": "Write this in German",
                 "question": "Hello",
+                "can_skip": True,
                 "answer_data": {
                     "correct_answer": "Hallo",
                 },
@@ -363,8 +446,6 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
         # Locate the current skill in the list and activate the next one if locked
         for idx, s in enumerate(all_skills):
             if s.id == target_skill.id:
-                # Clear any mid-lesson progress since skill is now fully completed
-                skill_mid_progress.pop(target_skill.id, None)
                 if idx + 1 < len(all_skills):
                     next_skill = all_skills[idx + 1]
                     if next_skill.status == "locked":
@@ -372,6 +453,17 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
                         next_skill.progress = 0
                         skill_mid_progress[next_skill.id] = 0.0
                 break
+
+    # Clear any mid-lesson progress and active session on lesson completion
+    if target_skill:
+        skill_mid_progress.pop(target_skill.id, None)
+        skill_exercise_sessions.pop(target_skill.id, None)
+    if payload.skill_id:
+        skill_mid_progress.pop(payload.skill_id, None)
+        skill_exercise_sessions.pop(payload.skill_id, None)
+    if payload.completed_lesson_id:
+        skill_mid_progress.pop(payload.completed_lesson_id, None)
+        skill_exercise_sessions.pop(payload.completed_lesson_id, None)
 
     db.commit()
     db.refresh(user)
@@ -385,12 +477,124 @@ def update_user_progress(user_id: int, payload: ProgressPayload, db: Session = D
 
 # Store for in-flight / mid-lesson progress for active skills
 skill_mid_progress: dict = {}
+# Store for active exercise sessions: skill_id -> session dict
+skill_exercise_sessions: dict = {}
+
+
+class ExerciseSessionPayload(BaseModel):
+    current_index: int = 0
+    progress_percent: float = 0.0
+    skipped_question_ids: list[int] = []
+    retry_queue: list[dict] = []
+    is_review_phase: bool = False
+    action: str | None = None
+    question_id: int | None = None
+
+
+@app.get("/api/skills/{skill_id}/session")
+def get_skill_session(skill_id: int):
+    session = skill_exercise_sessions.get(skill_id)
+    if not session:
+        # Initialize a new session from mock exercises
+        mock_data = get_mock_lesson(skill_id)
+        import copy
+        exercises = copy.deepcopy(mock_data.get("exercises", []))
+        for ex in exercises:
+            ex["can_skip"] = True
+
+        session = {
+            "skill_id": skill_id,
+            "current_index": 0,
+            "exercises": exercises,
+            "skipped_question_ids": [],
+            "retry_queue": [],
+            "is_review_phase": False,
+            "progress_percent": skill_mid_progress.get(skill_id, 0.0),
+        }
+        skill_exercise_sessions[skill_id] = session
+    else:
+        # Dynamically enforce can_skip based on skipped_question_ids and review phase
+        skipped_set = set(session.get("skipped_question_ids", []))
+        is_review = session.get("is_review_phase", False)
+        for ex in session.get("exercises", []):
+            if ex.get("id") in skipped_set or is_review:
+                ex["can_skip"] = False
+            else:
+                ex["can_skip"] = True
+
+        for ex in session.get("retry_queue", []):
+            ex["can_skip"] = False
+
+    return session
+
+
+@app.post("/api/skills/{skill_id}/session")
+def update_skill_session(skill_id: int, payload: ExerciseSessionPayload):
+    session = skill_exercise_sessions.get(skill_id)
+    if not session:
+        mock_data = get_mock_lesson(skill_id)
+        import copy
+        exercises = copy.deepcopy(mock_data.get("exercises", []))
+        session = {
+            "skill_id": skill_id,
+            "current_index": 0,
+            "exercises": exercises,
+            "skipped_question_ids": [],
+            "retry_queue": [],
+            "is_review_phase": False,
+            "progress_percent": 0.0,
+        }
+        skill_exercise_sessions[skill_id] = session
+
+    # If action is 'skip' and question_id is provided, register question as skipped
+    if payload.action == "skip" and payload.question_id is not None:
+        if payload.question_id not in session["skipped_question_ids"]:
+            session["skipped_question_ids"].append(payload.question_id)
+
+    # Sync and merge skipped IDs
+    if payload.skipped_question_ids:
+        for q_id in payload.skipped_question_ids:
+            if q_id not in session["skipped_question_ids"]:
+                session["skipped_question_ids"].append(q_id)
+
+    session["current_index"] = payload.current_index
+    session["progress_percent"] = max(0.0, min(100.0, float(payload.progress_percent)))
+    session["retry_queue"] = payload.retry_queue
+    session["is_review_phase"] = payload.is_review_phase
+
+    # Mark can_skip on exercises
+    skipped_set = set(session["skipped_question_ids"])
+    for ex in session.get("exercises", []):
+        if ex.get("id") in skipped_set or session["is_review_phase"]:
+            ex["can_skip"] = False
+        else:
+            ex["can_skip"] = True
+
+    for ex in session.get("retry_queue", []):
+        ex["can_skip"] = False
+
+    # Also synchronize skill_mid_progress so course path ring shows in-flight progress
+    skill_mid_progress[skill_id] = session["progress_percent"]
+
+    return {
+        "status": "success",
+        "session": session,
+    }
+
+
+@app.delete("/api/skills/{skill_id}/session")
+def clear_skill_session(skill_id: int):
+    skill_exercise_sessions.pop(skill_id, None)
+    skill_mid_progress.pop(skill_id, None)
+    return {"status": "cleared", "skill_id": skill_id}
 
 
 @app.post("/api/skills/{skill_id}/mid-progress")
 def save_skill_mid_progress(skill_id: int, payload: dict):
     progress_val = float(payload.get("progress_percent", 0))
     skill_mid_progress[skill_id] = max(0.0, min(100.0, progress_val))
+    if skill_id in skill_exercise_sessions:
+        skill_exercise_sessions[skill_id]["progress_percent"] = skill_mid_progress[skill_id]
     return {
         "skill_id": skill_id,
         "progress_percent": skill_mid_progress[skill_id],

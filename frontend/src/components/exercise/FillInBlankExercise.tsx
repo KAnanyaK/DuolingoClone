@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
 import { Check, X, Volume2, Heart } from "lucide-react";
 import { OutOfHeartsModal } from "./OutOfHeartsModal";
+import { speakGerman } from "@/lib/tts";
 
 export interface FillInBlankExerciseData {
   id: number;
@@ -22,6 +23,7 @@ export interface FillInBlankExerciseProps {
   progressPercent?: number;
   targetProgressPercent?: number;
   isReview?: boolean;
+  canSkip?: boolean;
   onComplete?: () => void;
   onSkip?: () => void;
   onExit?: () => void;
@@ -32,6 +34,7 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
   progressPercent = 40,
   targetProgressPercent = 60,
   isReview = false,
+  canSkip = true,
   onComplete,
   onSkip,
   onExit,
@@ -93,19 +96,19 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-white font-nunito select-none">
+    <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-[#131F24] text-[#4B4B4B] dark:text-[#E5E5E5] font-nunito select-none transition-colors">
       {/* Top Header */}
       <div className="max-w-4xl w-full mx-auto px-4 sm:px-8 pt-6 pb-4 flex items-center gap-4 sm:gap-6">
         <button
           onClick={onExit}
-          className="text-[#afafaf] hover:text-[#4b4b4b] p-1.5 transition-colors cursor-pointer"
+          className="text-[#afafaf] hover:text-[#4b4b4b] dark:hover:text-white p-1.5 transition-colors cursor-pointer"
           title="Exit lesson"
         >
           <X className="w-6 h-6 stroke-[3]" />
         </button>
 
         {/* Progress Bar */}
-        <div className="flex-1 h-4 bg-[#e5e5e5] rounded-full overflow-hidden p-0.5">
+        <div className="flex-1 h-4 bg-[#e5e5e5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5">
           <div
             className="h-full bg-[#58CC02] rounded-full transition-all duration-500 ease-out relative"
             style={{ width: `${progress}%` }}
@@ -123,14 +126,26 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
 
       {/* Main Content */}
       <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col justify-center">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-8">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] dark:text-white mb-8">
           {isReview && <span className="text-[#1CB0F6]">Give it a try: </span>}
           {exercise.prompt}
         </h1>
 
         {/* Sentence with Blank Slot */}
-        <div className="bg-gray-50 border-2 border-[#e5e5e5] rounded-3xl p-6 sm:p-8 mb-12 flex flex-wrap items-center justify-center gap-2 text-xl sm:text-2xl font-bold text-[#4B4B4B]">
-          <button className="text-[#1CB0F6] hover:scale-110 active:scale-95 transition-transform p-1 mr-2 cursor-pointer">
+        <div className="bg-gray-50 dark:bg-[#18272E] border-2 border-[#e5e5e5] dark:border-[#263E4B] rounded-3xl p-6 sm:p-8 mb-12 flex flex-wrap items-center justify-center gap-2 text-xl sm:text-2xl font-bold text-[#4B4B4B] dark:text-white">
+          <button
+            type="button"
+            onClick={() => {
+              const fullSentence = exercise.sentence.replace(
+                "___",
+                selectedWord || exercise.answer_data.correct_answer
+              );
+              speakGerman(fullSentence);
+            }}
+            className="text-[#1CB0F6] hover:scale-110 active:scale-95 transition-transform p-1 mr-2 cursor-pointer"
+            title="Listen pronunciation"
+            aria-label="Listen pronunciation"
+          >
             <Volume2 className="w-6 h-6 stroke-[2.5]" />
           </button>
 
@@ -141,13 +156,13 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
             <button
               onClick={handleUnselectWord}
               disabled={status !== "idle"}
-              className="btn-3d bg-white text-[#1CB0F6] font-black text-xl px-4 py-1.5 rounded-2xl border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6] active:translate-y-1 active:border-b-0 cursor-pointer shadow-sm transition-all"
+              className="btn-3d bg-white dark:bg-[#202F36] text-[#1CB0F6] font-black text-xl px-4 py-1.5 rounded-2xl border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6] active:translate-y-1 active:border-b-0 cursor-pointer shadow-sm transition-all"
               title="Click to remove from blank"
             >
               {selectedWord}
             </button>
           ) : (
-            <div className="min-w-24 h-10 border-b-4 border-[#4B4B4B] mx-2 inline-flex items-center justify-center text-sm text-[#afafaf] font-extrabold">
+            <div className="min-w-24 h-10 border-b-4 border-[#4B4B4B] dark:border-[#E5E5E5] mx-2 inline-flex items-center justify-center text-sm text-[#afafaf] dark:text-[#8FA2AC] font-extrabold">
               ___
             </div>
           )}
@@ -163,14 +178,14 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
             return isUsed ? (
               <div
                 key={idx}
-                className="bg-[#e5e5e5] rounded-2xl px-5 py-3 border-2 border-transparent h-12 min-w-20 opacity-50"
+                className="bg-[#e5e5e5] dark:bg-[#202F36] rounded-2xl px-5 py-3 border-2 border-transparent h-12 min-w-20 opacity-50"
               />
             ) : (
               <button
                 key={idx}
                 onClick={() => handleSelectWord(word)}
                 disabled={status !== "idle" || hearts <= 0}
-                className="btn-3d bg-white text-[#4B4B4B] font-extrabold text-base px-6 py-3 rounded-2xl border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-0 cursor-pointer transition-all shadow-sm"
+                className="btn-3d bg-white dark:bg-[#202F36] text-[#4B4B4B] dark:text-[#E5E5E5] font-extrabold text-base px-6 py-3 rounded-2xl border-2 border-[#e5e5e5] dark:border-[#37464F] border-b-4 border-b-[#e5e5e5] dark:border-b-[#263740] hover:bg-gray-50 dark:hover:bg-[#2B3E48] active:translate-y-1 active:border-b-0 cursor-pointer transition-all shadow-sm"
               >
                 {word}
               </button>
@@ -183,10 +198,10 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
       <footer
         className={`w-full border-t-2 transition-all duration-300 ease-out py-5 px-6 sm:px-12 ${
           status === "idle"
-            ? "bg-white border-[#e5e5e5]"
+            ? "bg-white dark:bg-[#131F24] border-[#e5e5e5] dark:border-[#263E4B]"
             : status === "correct"
-            ? "bg-[#d7ffb8] border-[#bcf096]"
-            : "bg-[#ffdfe0] border-[#f8bcc0]"
+            ? "bg-[#d7ffb8] dark:bg-[#1A3826] border-[#bcf096] dark:border-[#285734]"
+            : "bg-[#ffdfe0] dark:bg-[#3D1E24] border-[#f8bcc0] dark:border-[#5C262C]"
         }`}
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -199,7 +214,7 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-[#58CC02]">Well done!</h3>
-                  <p className="text-xs font-bold text-[#46a302]">+10 XP earned</p>
+                  <p className="text-xs font-bold text-[#46a302] dark:text-[#58CC02]">+10 XP earned</p>
                 </div>
               </div>
             )}
@@ -211,7 +226,7 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-[#FF4B4B]">Correct answer:</h3>
-                  <p className="text-base font-extrabold text-[#ea2b2b]">
+                  <p className="text-base font-extrabold text-[#ea2b2b] dark:text-[#FF6B6B]">
                     {exercise.answer_data.correct_answer}
                   </p>
                 </div>
@@ -219,7 +234,7 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
             )}
 
             {status === "idle" && (
-              <div className="hidden sm:block text-sm font-bold text-[#777777]">
+              <div className="hidden sm:block text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
                 Select a word chip to fill the blank
               </div>
             )}
@@ -231,8 +246,14 @@ export const FillInBlankExercise: React.FC<FillInBlankExerciseProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={handleSkip}
-                  className="px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-wider text-[#afafaf] hover:text-[#777777] hover:bg-gray-100 transition-all cursor-pointer"
+                  disabled={!canSkip}
+                  onClick={canSkip ? handleSkip : undefined}
+                  className={`px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all ${
+                    !canSkip
+                      ? "text-gray-300 dark:text-[#3B4D54] cursor-not-allowed opacity-40 select-none"
+                      : "text-[#afafaf] dark:text-[#8FA2AC] hover:text-[#777777] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202F36] cursor-pointer"
+                  }`}
+                  title={!canSkip ? "Questions cannot be skipped again" : undefined}
                 >
                   Skip
                 </button>

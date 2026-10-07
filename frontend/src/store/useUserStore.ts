@@ -9,6 +9,10 @@ export interface UserState {
   isHeartsModalOpen: boolean;
   heartsCooldownEndTime: number | null; // Timestamp (ms) when 10min timer completes
   darkMode: boolean;
+  streakFreezeActive: boolean;
+  dailyEarnedXp: number;
+  selectedGoalXp: number;
+  isDailyGoalAchieved: boolean;
   currentCourse: {
     id: number;
     title: string;
@@ -16,6 +20,13 @@ export interface UserState {
   };
   // Actions
   toggleDarkMode: (enabled?: boolean) => void;
+  setSelectedGoalXp: (goal: number) => void;
+  setDailyEarnedXp: (amount: number) => void;
+  setDailyGoalAchieved: (achieved: boolean) => void;
+  addDailyXp: (amount: number) => void;
+  setStreakFreezeActive: (active: boolean) => void;
+  equipStreakFreeze: () => Promise<boolean>;
+  unequipStreakFreeze: () => Promise<boolean>;
   decrementHearts: () => void;
   refillHearts: () => void;
   setHearts: (hearts: number) => void;
@@ -30,7 +41,12 @@ export interface UserState {
     xp?: number;
     streak?: number;
     gems?: number;
+    streakFreezeActive?: boolean;
+    streak_freeze_active?: boolean;
     heartsCooldownEndTime?: number | null;
+    dailyEarnedXp?: number;
+    selectedGoalXp?: number;
+    isDailyGoalAchieved?: boolean;
   }) => void;
 }
 
@@ -119,6 +135,73 @@ const setStoredDarkMode = (enabled: boolean) => {
   }
 };
 
+const getTodayKey = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
+
+const getStoredDailyGoalAchieved = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const flag = localStorage.getItem("duo_daily_goal_achieved");
+  const date = localStorage.getItem("duo_daily_goal_achieved_date");
+  const today = getTodayKey();
+  return flag === "true" && (date === today || !date);
+};
+
+const setStoredDailyGoalAchieved = (achieved: boolean) => {
+  if (typeof window === "undefined") return;
+  const today = getTodayKey();
+  localStorage.setItem("duo_daily_goal_achieved", achieved ? "true" : "false");
+  if (achieved) {
+    localStorage.setItem("duo_daily_goal_achieved_date", today);
+  }
+};
+
+const getStoredDailyGoal = (): number => {
+  if (typeof window === "undefined") return 20;
+  const val = localStorage.getItem("duo_selected_goal_xp");
+  if (!val) return 20;
+  const parsed = parseInt(val, 10);
+  return isNaN(parsed) ? 20 : parsed;
+};
+
+const setStoredDailyGoal = (target: number) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("duo_selected_goal_xp", target.toString());
+};
+
+const getStoredDailyEarnedXp = (): number => {
+  if (typeof window === "undefined") return 10;
+  const isAchieved = getStoredDailyGoalAchieved();
+  const goal = getStoredDailyGoal();
+  const val = localStorage.getItem("duo_daily_earned_xp");
+  let parsed = val !== null ? parseInt(val, 10) : 10;
+  if (isNaN(parsed)) parsed = 10;
+  if (isAchieved && parsed < goal) {
+    parsed = goal;
+  }
+  return parsed;
+};
+
+const setStoredDailyEarnedXp = (amount: number) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("duo_daily_earned_xp", amount.toString());
+  const goal = getStoredDailyGoal();
+  if (amount >= goal) {
+    setStoredDailyGoalAchieved(true);
+  }
+};
+
+const getStoredStreakFreeze = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("duo_streak_freeze_active") === "true";
+};
+
+const setStoredStreakFreeze = (active: boolean) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("duo_streak_freeze_active", active ? "true" : "false");
+};
+
 export const useUserStore = create<UserState>((set) => ({
   hearts: 5,
   maxHearts: 5,
@@ -128,6 +211,10 @@ export const useUserStore = create<UserState>((set) => ({
   isHeartsModalOpen: false,
   heartsCooldownEndTime: null,
   darkMode: false,
+  streakFreezeActive: getStoredStreakFreeze(),
+  dailyEarnedXp: getStoredDailyEarnedXp(),
+  selectedGoalXp: getStoredDailyGoal(),
+  isDailyGoalAchieved: getStoredDailyGoalAchieved(),
   currentCourse: {
     id: 1,
     title: "German",
@@ -138,6 +225,93 @@ export const useUserStore = create<UserState>((set) => ({
       const nextMode = enabled !== undefined ? enabled : !state.darkMode;
       setStoredDarkMode(nextMode);
       return { darkMode: nextMode };
+    }),
+  setStreakFreezeActive: (active) => {
+    setStoredStreakFreeze(active);
+    return set({ streakFreezeActive: active });
+  },
+  equipStreakFreeze: async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/users/1/equip-freeze", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to equip streak freeze");
+      }
+      const data = await res.json();
+      setStoredStreakFreeze(true);
+      if (typeof data.gems === "number") {
+        setStoredGems(data.gems);
+      }
+      set((state) => ({
+        streakFreezeActive: true,
+        gems: typeof data.gems === "number" ? data.gems : Math.max(0, state.gems - 100),
+      }));
+      return true;
+    } catch (err) {
+      console.error("equipStreakFreeze error:", err);
+      return false;
+    }
+  },
+  unequipStreakFreeze: async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/users/1/unequip-freeze", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to unequip streak freeze");
+      }
+      const data = await res.json();
+      setStoredStreakFreeze(false);
+      if (typeof data.gems === "number") {
+        setStoredGems(data.gems);
+      }
+      set((state) => ({
+        streakFreezeActive: false,
+        gems: typeof data.gems === "number" ? data.gems : state.gems + 100,
+      }));
+      return true;
+    } catch (err) {
+      console.error("unequipStreakFreeze error:", err);
+      return false;
+    }
+  },
+  setSelectedGoalXp: (goal) =>
+    set((state) => {
+      setStoredDailyGoal(goal);
+      const isReached = state.dailyEarnedXp >= goal;
+      setStoredDailyGoalAchieved(isReached);
+      return { selectedGoalXp: goal, isDailyGoalAchieved: isReached };
+    }),
+  setDailyEarnedXp: (amount) =>
+    set((state) => {
+      setStoredDailyEarnedXp(amount);
+      const goal = state.selectedGoalXp || getStoredDailyGoal();
+      const reached = amount >= goal || state.isDailyGoalAchieved || getStoredDailyGoalAchieved();
+      if (reached) {
+        setStoredDailyGoalAchieved(true);
+      }
+      return { dailyEarnedXp: amount, isDailyGoalAchieved: reached };
+    }),
+  setDailyGoalAchieved: (achieved) =>
+    set((state) => {
+      setStoredDailyGoalAchieved(achieved);
+      const goal = state.selectedGoalXp || getStoredDailyGoal();
+      const effectiveDaily = achieved ? Math.max(state.dailyEarnedXp, goal) : state.dailyEarnedXp;
+      setStoredDailyEarnedXp(effectiveDaily);
+      return { isDailyGoalAchieved: achieved, dailyEarnedXp: effectiveDaily };
+    }),
+  addDailyXp: (amount) =>
+    set((state) => {
+      const nextDaily = state.dailyEarnedXp + amount;
+      const currentGoal = state.selectedGoalXp || getStoredDailyGoal();
+      const reached = nextDaily >= currentGoal || state.isDailyGoalAchieved || getStoredDailyGoalAchieved();
+      setStoredDailyEarnedXp(nextDaily);
+      if (reached) {
+        setStoredDailyGoalAchieved(true);
+      }
+      return { dailyEarnedXp: nextDaily, isDailyGoalAchieved: reached };
     }),
   decrementHearts: () =>
     set((state) => {
@@ -207,9 +381,18 @@ export const useUserStore = create<UserState>((set) => ({
   addXp: (amount) =>
     set((state) => {
       const nextXp = state.xp + amount;
+      const nextDaily = state.dailyEarnedXp + amount;
+      const currentGoal = state.selectedGoalXp || getStoredDailyGoal();
+      const reached = nextDaily >= currentGoal || state.isDailyGoalAchieved || getStoredDailyGoalAchieved();
       setStoredXp(nextXp);
+      setStoredDailyEarnedXp(nextDaily);
+      if (reached) {
+        setStoredDailyGoalAchieved(true);
+      }
       return {
         xp: nextXp,
+        dailyEarnedXp: nextDaily,
+        isDailyGoalAchieved: reached,
       };
     }),
   incrementStreak: () =>
@@ -233,9 +416,27 @@ export const useUserStore = create<UserState>((set) => ({
       if (typeof stats.hearts === "number") {
         setStoredHearts(stats.hearts);
       }
+      let nextDaily = typeof stats.dailyEarnedXp === "number"
+        ? stats.dailyEarnedXp
+        : (getStoredDailyEarnedXp() || state.dailyEarnedXp);
+
       if (typeof stats.xp === "number") {
         setStoredXp(stats.xp);
+        if (stats.xp > state.xp) {
+          nextDaily = nextDaily + (stats.xp - state.xp);
+        }
       }
+
+      const currentGoal = stats.selectedGoalXp || state.selectedGoalXp || getStoredDailyGoal();
+      let isAchieved = stats.isDailyGoalAchieved ?? (state.isDailyGoalAchieved || getStoredDailyGoalAchieved() || nextDaily >= currentGoal);
+      if (isAchieved) {
+        setStoredDailyGoalAchieved(true);
+        if (nextDaily < currentGoal) {
+          nextDaily = currentGoal;
+        }
+      }
+      setStoredDailyEarnedXp(nextDaily);
+
       if (typeof stats.gems === "number") {
         setStoredGems(stats.gems);
       }
@@ -245,9 +446,21 @@ export const useUserStore = create<UserState>((set) => ({
       if (stats.heartsCooldownEndTime !== undefined) {
         setStoredCooldown(stats.heartsCooldownEndTime);
       }
+      let freezeVal = state.streakFreezeActive;
+      if (typeof stats.streakFreezeActive === "boolean") {
+        freezeVal = stats.streakFreezeActive;
+        setStoredStreakFreeze(freezeVal);
+      } else if (typeof stats.streak_freeze_active === "boolean") {
+        freezeVal = stats.streak_freeze_active;
+        setStoredStreakFreeze(freezeVal);
+      }
       return {
         ...state,
         ...stats,
+        dailyEarnedXp: nextDaily,
+        selectedGoalXp: currentGoal,
+        isDailyGoalAchieved: isAchieved,
+        streakFreezeActive: freezeVal,
       };
     }),
 }));

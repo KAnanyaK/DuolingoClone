@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
 import { Check, Heart, X } from "lucide-react";
 import { OutOfHeartsModal } from "./OutOfHeartsModal";
+import { speakGerman } from "@/lib/tts";
 
 export interface PairItem {
   id: number;
@@ -26,6 +27,7 @@ export interface MatchPairsExerciseProps {
   progressPercent?: number;
   targetProgressPercent?: number;
   isReview?: boolean;
+  canSkip?: boolean;
   onComplete?: () => void;
   onSkip?: () => void;
   onExit?: () => void;
@@ -43,6 +45,7 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
   progressPercent = 60,
   targetProgressPercent = 80,
   isReview = false,
+  canSkip = true,
   onComplete,
   onSkip,
   onExit,
@@ -101,6 +104,12 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
   const handleCardClick = (card: CardItem) => {
     if (isProcessing || hearts <= 0) return;
     if (matchedCardIds.includes(card.cardId)) return;
+
+    // Speak German word upon tapping
+    if (card.lang === "german") {
+      speakGerman(card.text);
+    }
+
     if (selectedCard && selectedCard.cardId === card.cardId) {
       // Toggle off if clicking the already selected card
       setSelectedCard(null);
@@ -179,20 +188,20 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
 
     // Determine styling based on match states
     let cardStyle =
-      "bg-white text-[#4B4B4B] border-2 border-[#e5e5e5] border-b-4 border-b-[#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:border-b-2";
+      "bg-white dark:bg-[#202F36] text-[#4B4B4B] dark:text-[#E5E5E5] border-2 border-[#e5e5e5] dark:border-[#37464F] border-b-4 border-b-[#e5e5e5] dark:border-b-[#263740] hover:bg-gray-50 dark:hover:bg-[#2B3E48] active:translate-y-1 active:border-b-2";
 
     if (isMatched) {
       cardStyle =
-        "bg-[#f7f7f7] text-[#afafaf] border-2 border-[#e5e5e5] border-b-2 border-b-[#e5e5e5] opacity-50 cursor-not-allowed";
+        "bg-[#f7f7f7] dark:bg-[#18272E] text-[#afafaf] dark:text-[#58646D] border-2 border-[#e5e5e5] dark:border-[#263E4B] border-b-2 border-b-[#e5e5e5] dark:border-b-[#263E4B] opacity-50 cursor-not-allowed";
     } else if (isFlashingSuccess) {
       cardStyle =
-        "bg-[#d7ffb8] text-[#58CC02] border-2 border-[#58CC02] border-b-4 border-b-[#46a302] scale-105";
+        "bg-[#d7ffb8] dark:bg-[#1A3826] text-[#58CC02] border-2 border-[#58CC02] border-b-4 border-b-[#46a302] scale-105";
     } else if (isFlashingError) {
       cardStyle =
-        "bg-[#ffdfe0] text-[#FF4B4B] border-2 border-[#FF4B4B] border-b-4 border-b-[#ea2b2b] animate-shake";
+        "bg-[#ffdfe0] dark:bg-[#3D1E24] text-[#FF4B4B] border-2 border-[#FF4B4B] border-b-4 border-b-[#ea2b2b] animate-shake";
     } else if (isSelected) {
       cardStyle =
-        "bg-[#ddf4ff] text-[#1CB0F6] border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6]";
+        "bg-[#ddf4ff] dark:bg-[#1A3442] text-[#1CB0F6] border-2 border-[#1CB0F6] border-b-4 border-b-[#1CB0F6]";
     }
 
     return (
@@ -208,20 +217,20 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-white font-nunito select-none">
+    <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-[#131F24] text-[#4B4B4B] dark:text-[#E5E5E5] font-nunito select-none transition-colors">
       {/* Top Header with Progress Bar & Hearts */}
       <div className="max-w-4xl w-full mx-auto px-4 sm:px-8 pt-6 pb-4 flex items-center gap-4 sm:gap-6">
         {/* Close Button */}
         <button
           onClick={onExit}
-          className="text-[#afafaf] hover:text-[#4b4b4b] p-1.5 transition-colors cursor-pointer"
+          className="text-[#afafaf] hover:text-[#4b4b4b] dark:hover:text-white p-1.5 transition-colors cursor-pointer"
           title="Exit lesson"
         >
           <X className="w-6 h-6 stroke-[3]" />
         </button>
 
         {/* Progress Bar */}
-        <div className="flex-1 h-4 bg-[#e5e5e5] rounded-full overflow-hidden p-0.5">
+        <div className="flex-1 h-4 bg-[#e5e5e5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5">
           <div
             className="h-full bg-[#58CC02] rounded-full transition-all duration-500 ease-out relative"
             style={{ width: `${progress}%` }}
@@ -240,7 +249,7 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col">
         {/* Prompt */}
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] mb-8">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#4B4B4B] dark:text-white mb-8">
           {isReview && <span className="text-[#1CB0F6]">Give it a try: </span>}
           {exercise.prompt}
         </h1>
@@ -263,10 +272,10 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
       <footer
         className={`w-full border-t-2 transition-all duration-300 ease-out py-5 px-6 sm:px-12 ${
           isCompleted
-            ? "bg-[#d7ffb8] border-[#bcf096]"
+            ? "bg-[#d7ffb8] dark:bg-[#1A3826] border-[#bcf096] dark:border-[#285734]"
             : isSkipped
-            ? "bg-[#ffdfe0] border-[#f8bcc0]"
-            : "bg-white border-[#e5e5e5]"
+            ? "bg-[#ffdfe0] dark:bg-[#3D1E24] border-[#f8bcc0] dark:border-[#5C262C]"
+            : "bg-white dark:bg-[#131F24] border-[#e5e5e5] dark:border-[#263E4B]"
         }`}
       >
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -279,7 +288,7 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-[#58CC02]">All pairs matched!</h3>
-                  <p className="text-xs font-bold text-[#46a302]">
+                  <p className="text-xs font-bold text-[#46a302] dark:text-[#58CC02]">
                     +15 XP earned • Great memory
                   </p>
                 </div>
@@ -293,7 +302,7 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-[#FF4B4B]">Correct solution:</h3>
-                  <p className="text-sm font-extrabold text-[#ea2b2b]">
+                  <p className="text-sm font-extrabold text-[#ea2b2b] dark:text-[#FF6B6B]">
                     {exercise.answer_data.pairs
                       .map((p) => `${p.german} = ${p.english}`)
                       .join(" • ")}
@@ -303,7 +312,7 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
             )}
 
             {!isCompleted && !isSkipped && (
-              <div className="hidden sm:block text-sm font-bold text-[#777777]">
+              <div className="hidden sm:block text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
                 Tap a word in German and its matching English translation
               </div>
             )}
@@ -315,8 +324,14 @@ export const MatchPairsExercise: React.FC<MatchPairsExerciseProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={handleSkip}
-                  className="px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-wider text-[#afafaf] hover:text-[#777777] hover:bg-gray-100 transition-all cursor-pointer"
+                  disabled={!canSkip}
+                  onClick={canSkip ? handleSkip : undefined}
+                  className={`px-5 py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all ${
+                    !canSkip
+                      ? "text-gray-300 dark:text-[#3B4D54] cursor-not-allowed opacity-40 select-none"
+                      : "text-[#afafaf] dark:text-[#8FA2AC] hover:text-[#777777] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202F36] cursor-pointer"
+                  }`}
+                  title={!canSkip ? "Questions cannot be skipped again" : undefined}
                 >
                   Skip
                 </button>

@@ -6,7 +6,9 @@ import { HeartsModal } from "@/components/ui/HeartsModal";
 import { HeartsPopover } from "@/components/ui/HeartsPopover";
 import { StreakPopover } from "@/components/ui/StreakPopover";
 import { GemsPopover } from "@/components/ui/GemsPopover";
+import { XpPopover } from "@/components/ui/XpPopover";
 import { CourseSelectorPopover } from "@/components/navigation/CourseSelectorPopover";
+import { StreakFreezeIcon } from "@/components/ui/StreakFreezeIcon";
 
 export interface TopBarProps {
   className?: string;
@@ -28,11 +30,13 @@ export const TopBar: React.FC<TopBarProps> = ({
     setIsHeartsModalOpen,
     heartsCooldownEndTime,
     refillHearts,
+    streakFreezeActive,
   } = useUserStore();
 
   const [isStreakPopoverOpen, setIsStreakPopoverOpen] = useState(false);
   const [isHeartsPopoverOpen, setIsHeartsPopoverOpen] = useState(false);
   const [isGemsPopoverOpen, setIsGemsPopoverOpen] = useState(false);
+  const [isXpPopoverOpen, setIsXpPopoverOpen] = useState(false);
   const [isCoursePopoverOpen, setIsCoursePopoverOpen] = useState(false);
   const [timeLeftText, setTimeLeftText] = useState<string>("Wait to refill in 10 mins");
 
@@ -80,12 +84,18 @@ export const TopBar: React.FC<TopBarProps> = ({
         const apiStreak = typeof data.streak_days === "number" ? data.streak_days : (data.streak || 1);
         localStorage.setItem("duo_user_streak", apiStreak.toString());
 
+        const apiFreeze = typeof data.streak_freeze_active === "boolean"
+          ? data.streak_freeze_active
+          : localStorage.getItem("duo_streak_freeze_active") === "true";
+        localStorage.setItem("duo_streak_freeze_active", apiFreeze ? "true" : "false");
+
         setStats({
           hearts: parsedHearts,
           xp: effectiveXp,
           streak: apiStreak,
           gems: effectiveGems,
           heartsCooldownEndTime: activeCooldown,
+          streakFreezeActive: apiFreeze,
         });
       })
       .catch(() => {
@@ -93,11 +103,13 @@ export const TopBar: React.FC<TopBarProps> = ({
         const fallbackGems = storedGems !== null ? parseInt(storedGems, 10) : 500;
         const storedStreakVal = localStorage.getItem("duo_user_streak");
         const fallbackStreak = storedStreakVal ? parseInt(storedStreakVal, 10) : 1;
+        const storedFreeze = localStorage.getItem("duo_streak_freeze_active") === "true";
         setStats({
           gems: fallbackGems,
           hearts: activeCooldown ? 0 : 5,
           streak: fallbackStreak,
           heartsCooldownEndTime: activeCooldown,
+          streakFreezeActive: storedFreeze,
         });
       })
       .finally(() => {
@@ -179,40 +191,53 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={() => setIsStreakPopoverOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 font-black text-[#FF9600] cursor-pointer hover:opacity-90 active:scale-95 transition-all p-1 rounded-2xl"
-            title="Streak count"
+            className={`flex items-center gap-1.5 font-black cursor-pointer hover:opacity-90 active:scale-95 transition-all p-1 rounded-2xl ${
+              streakFreezeActive ? "text-[#1CB0F6]" : "text-[#FF9600]"
+            }`}
+            title={streakFreezeActive ? "Streak Freeze Active!" : "Streak count"}
             aria-label="Streak details"
           >
-            {/* Duolingo Flame Fire Symbol from screenshot (white badge outline, plump curled flame, bright yellow core teardrop) */}
-            <svg
-              className="w-8 h-8 filter drop-shadow-sm"
-              viewBox="0 0 100 100"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            {streakFreezeActive ? (
+              <StreakFreezeIcon width={32} height={32} className="filter drop-shadow-sm" />
+            ) : (
+              /* Duolingo Flame Fire Symbol from screenshot (white badge outline, plump curled flame, bright yellow core teardrop) */
+              <svg
+                className="w-8 h-8 filter drop-shadow-sm"
+                viewBox="0 0 100 100"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Thick white rounded border outline from screenshot */}
+                <path
+                  d="M50 4C55 4 82 28 82 56C82 74 68 90 50 90C32 90 18 74 18 56C18 36 34 20 44 10C44 20 50 26 56 26C56 26 58 14 50 4Z"
+                  fill="#FFFFFF"
+                  stroke="#FFFFFF"
+                  strokeWidth="6"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                {/* Vibrant orange main fiery flame */}
+                <path
+                  d="M50 8C54 8 78 30 78 56C78 72 65 86 50 86C35 86 22 72 22 56C22 38 36 24 45 14C45 22 50 28 55 28C55 28 57 16 50 8Z"
+                  fill="#FF9600"
+                />
+                {/* Bright yellow energetic teardrop core */}
+                <path
+                  d="M50 44C51 44 63 54 63 64C63 72 57 78 50 78C43 78 37 72 37 64C37 54 49 44 50 44Z"
+                  fill="#FFC800"
+                />
+                {/* Tiny luminous inner glimmer */}
+                <ellipse cx="49" cy="67" rx="5" ry="6" fill="#FFF275" opacity="0.85" />
+              </svg>
+            )}
+            <span
+              suppressHydrationWarning
+              className={`text-base sm:text-lg font-black ${
+                streakFreezeActive ? "text-[#1CB0F6]" : "text-[#FF9600]"
+              }`}
             >
-              {/* Thick white rounded border outline from screenshot */}
-              <path
-                d="M50 4C55 4 82 28 82 56C82 74 68 90 50 90C32 90 18 74 18 56C18 36 34 20 44 10C44 20 50 26 56 26C56 26 58 14 50 4Z"
-                fill="#FFFFFF"
-                stroke="#FFFFFF"
-                strokeWidth="6"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-              {/* Vibrant orange main fiery flame */}
-              <path
-                d="M50 8C54 8 78 30 78 56C78 72 65 86 50 86C35 86 22 72 22 56C22 38 36 24 45 14C45 22 50 28 55 28C55 28 57 16 50 8Z"
-                fill="#FF9600"
-              />
-              {/* Bright yellow energetic teardrop core */}
-              <path
-                d="M50 44C51 44 63 54 63 64C63 72 57 78 50 78C43 78 37 72 37 64C37 54 49 44 50 44Z"
-                fill="#FFC800"
-              />
-              {/* Tiny luminous inner glimmer */}
-              <ellipse cx="49" cy="67" rx="5" ry="6" fill="#FFF275" opacity="0.85" />
-            </svg>
-            <span suppressHydrationWarning className="text-base sm:text-lg text-[#FF9600] font-black">{streak}</span>
+              {streak}
+            </span>
           </button>
 
           {/* Floating Streak Popover Dialog */}
@@ -272,38 +297,50 @@ export const TopBar: React.FC<TopBarProps> = ({
           />
         </div>
 
-        {/* XP - Green Power lightning bolt with crisp white border */}
-        <div
-          className="flex items-center gap-1.5 font-black text-[#58CC02] cursor-pointer hover:opacity-85 transition-opacity"
-          title="Total XP"
-        >
-          <svg
-            className="w-7 h-7 filter drop-shadow-sm"
-            viewBox="0 0 100 100"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        {/* XP - Green Power lightning bolt with Popover */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsXpPopoverOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 font-black text-[#58CC02] cursor-pointer hover:opacity-85 active:scale-95 transition-all p-1 rounded-2xl"
+            title="Total XP"
+            aria-label="XP details"
           >
-            {/* White outline path */}
-            <path
-              d="M56 6L20 54h26l-6 40 40-52H52l8-36z"
-              fill="#FFFFFF"
-              stroke="#FFFFFF"
-              strokeWidth="10"
-              strokeLinejoin="round"
-            />
-            {/* Main vibrant green lightning power body */}
-            <path
-              d="M56 6L20 54h26l-6 40 40-52H52l8-36z"
-              fill="#58CC02"
-            />
-            {/* Light inner accent */}
-            <path
-              d="M52 14L28 50h20l-4 28 28-36H48l6-28z"
-              fill="#79E026"
-              opacity="0.6"
-            />
-          </svg>
-          <span className="text-base sm:text-lg text-[#58CC02] font-black">{xp} XP</span>
+            <svg
+              className="w-7 h-7 filter drop-shadow-sm"
+              viewBox="0 0 100 100"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* White outline path */}
+              <path
+                d="M56 6L20 54h26l-6 40 40-52H52l8-36z"
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                strokeWidth="10"
+                strokeLinejoin="round"
+              />
+              {/* Main vibrant green lightning power body */}
+              <path
+                d="M56 6L20 54h26l-6 40 40-52H52l8-36z"
+                fill="#58CC02"
+              />
+              {/* Light inner accent */}
+              <path
+                d="M52 14L28 50h20l-4 28 28-36H48l6-28z"
+                fill="#79E026"
+                opacity="0.6"
+              />
+            </svg>
+            <span className="text-base sm:text-lg text-[#58CC02] font-black">{xp} XP</span>
+          </button>
+
+          {/* Floating XP Popover Dialog */}
+          <XpPopover
+            isOpen={isXpPopoverOpen}
+            onClose={() => setIsXpPopoverOpen(false)}
+            xpCount={xp}
+          />
         </div>
 
         {/* Hearts & Plan B Cooldown Indicator - Red Heart with crisp white border */}

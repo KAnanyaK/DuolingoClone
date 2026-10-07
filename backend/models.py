@@ -24,6 +24,7 @@ class User(Base):
     gems = Column(Integer, default=500, nullable=False)
     streak = Column(Integer, default=0, nullable=False)
     streak_days = Column(Integer, default=1, nullable=False)
+    streak_freeze_active = Column(Boolean, default=False, nullable=False)
     last_active_date = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -11,6 +11,7 @@ import { EatingPanda } from "@/components/mascots/EatingPanda";
 import { PainterMascot } from "@/components/mascots/PainterMascot";
 import { SuperSidebarCard } from "@/components/ui/SuperSidebarCard";
 import { SuperModal } from "@/components/ui/SuperModal";
+import { DailyGoalWidget } from "@/components/ui/DailyGoalWidget";
 
 interface SkillItem {
   id: number;
@@ -262,29 +263,37 @@ export default function LearnPage() {
               );
             })}
 
-            {/* Gray Disabled Container: Section 2: Coming Soon */}
-            <div className="w-full bg-[#3B464F] dark:bg-[#f2f2f2] border-2 border-dashed border-[#58646D] dark:border-[#d6d6d6] rounded-3xl p-8 my-8 text-center flex flex-col items-center justify-center opacity-100 dark:opacity-70 select-none shadow-sm transition-colors">
-              <div className="w-12 h-12 rounded-full bg-[#2B353D] dark:bg-[#e5e5e5] flex items-center justify-center text-[#E5E5E5] dark:text-[#afafaf] mb-3 shadow-inner">
-                <Lock className="w-6 h-6 stroke-[2.5]" />
+            {/* Section 2: Coming Soon Unit Header (Yellow) */}
+            <div className="w-full bg-[#FFC800] rounded-3xl p-6 text-white my-8 shadow-sm flex items-center justify-between select-none transition-colors border-b-4 border-[#E5A800]">
+              <div>
+                <div className="uppercase tracking-widest text-xs font-black opacity-90 mb-1 flex items-center gap-1.5 text-white">
+                  <Lock className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>Section 2</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white mb-1">
+                  Section 2: Coming Soon
+                </h2>
+                <p className="text-xs sm:text-sm font-semibold text-white/95">
+                  Complete all units in Section 1 to unlock intermediate German topics!
+                </p>
               </div>
-              <h3 className="text-lg font-black text-white dark:text-[#8f8f8f] uppercase tracking-wider mb-1">
-                Section 2: Coming Soon
-              </h3>
-              <p className="text-xs font-bold text-[#C2C9CF] dark:text-[#afafaf]">
-                Complete all units in Section 1 to unlock intermediate German topics!
-              </p>
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white flex-shrink-0 shadow-inner ml-4">
+                <Lock className="w-6 h-6 stroke-[3]" />
+              </div>
             </div>
           </>
         )}
         </div>
 
         {/* Right Sidebar on Desktop */}
-        <div className="hidden lg:flex w-72 lg:w-80 flex-col gap-4 flex-shrink-0 sticky top-6">
+        <div className="hidden lg:flex w-80 lg:w-[340px] xl:w-[360px] flex-col gap-4 flex-shrink-0 sticky top-6">
+          <DailyGoalWidget />
           <SuperSidebarCard onUpgradeClick={() => setIsSuperModalOpen(true)} />
         </div>
 
         {/* Mobile / Tablet Card at Bottom */}
-        <div className="lg:hidden w-full max-w-2xl mt-4">
+        <div className="lg:hidden w-full max-w-2xl mt-4 flex flex-col gap-4">
+          <DailyGoalWidget />
           <SuperSidebarCard onUpgradeClick={() => setIsSuperModalOpen(true)} />
         </div>
       </div>

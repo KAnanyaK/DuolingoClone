@@ -18,7 +18,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
   skillId,
 }) => {
   const router = useRouter();
-  const { streak, xp, setStats } = useUserStore();
+  const { streak, xp, setStats, addDailyXp } = useUserStore();
 
   const [displayXp, setDisplayXp] = useState<number>(xp);
   const [displayStreak, setDisplayStreak] = useState<number>(streak);
@@ -80,6 +80,9 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
 
         setDisplayStreak(targetStreak);
 
+        // Add daily XP towards daily goal and persist achievement
+        addDailyXp(xpGained);
+
         // Update global Zustand store
         setStats({
           xp: targetXp,
@@ -92,6 +95,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
         const targetStreak = streak;
         setDisplayXp(targetXp);
         setDisplayStreak(targetStreak);
+        addDailyXp(xpGained);
         setStats({
           xp: targetXp,
           streak: targetStreak,
@@ -104,7 +108,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-white font-nunito select-none">
+    <div className="min-h-screen flex flex-col justify-between bg-white dark:bg-[#131F24] text-[#4B4B4B] dark:text-[#E5E5E5] font-nunito select-none transition-colors">
       {/* Empty Top Space */}
       <div className="h-10" />
 
@@ -162,7 +166,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
         <h1 className="text-3xl sm:text-4xl font-black text-[#58CC02] mb-2 tracking-tight">
           Lesson Complete!
         </h1>
-        <p className="text-base sm:text-lg font-bold text-[#777777] mb-8">
+        <p className="text-base sm:text-lg font-bold text-[#777777] dark:text-[#93A4AC] mb-8">
           You made great progress today. Keep it up!
         </p>
 
@@ -173,7 +177,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
             <div className="px-3 py-1.5 uppercase tracking-widest text-[11px] font-black text-center opacity-90">
               Total XP
             </div>
-            <div className="bg-white rounded-xl py-4 px-3 flex flex-col items-center justify-center">
+            <div className="bg-white dark:bg-[#18272E] rounded-xl py-4 px-3 flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 text-[#FFC800] mb-1">
                 <Zap className="w-7 h-7 fill-[#FFC800] stroke-none" />
                 <span className="text-2xl sm:text-3xl font-black">{displayXp}</span>
@@ -189,7 +193,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
             <div className="px-3 py-1.5 uppercase tracking-widest text-[11px] font-black text-center opacity-90">
               Streak
             </div>
-            <div className="bg-white rounded-xl py-4 px-3 flex flex-col items-center justify-center">
+            <div className="bg-white dark:bg-[#18272E] rounded-xl py-4 px-3 flex flex-col items-center justify-center">
               <div className="flex items-center gap-1.5 text-[#FF9600] mb-1">
                 <Flame className="w-7 h-7 fill-[#FF9600] stroke-none" />
                 <span className="text-2xl sm:text-3xl font-black">{displayStreak}</span>
@@ -203,7 +207,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
       </div>
 
       {/* Fixed Bottom Footer */}
-      <footer className="w-full border-t-2 border-[#e5e5e5] bg-white py-5 px-6 sm:px-12">
+      <footer className="w-full border-t-2 border-[#e5e5e5] dark:border-[#263E4B] bg-white dark:bg-[#131F24] py-5 px-6 sm:px-12">
         <div className="max-w-lg mx-auto">
           <Button
             variant="primary"

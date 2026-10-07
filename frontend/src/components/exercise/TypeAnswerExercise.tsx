@@ -21,6 +21,7 @@ export interface TypeAnswerExerciseProps {
   progressPercent?: number;
   targetProgressPercent?: number;
   isReview?: boolean;
+  canSkip?: boolean;
   onComplete?: () => void;
   onSkip?: () => void;
   onExit?: () => void;
@@ -31,6 +32,7 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
   progressPercent = 80,
   targetProgressPercent = 100,
   isReview = false,
+  canSkip = true,
   onComplete,
   onSkip,
   onExit,
@@ -88,7 +90,7 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
   const isCheckDisabled = inputVal.trim().length === 0 || hearts <= 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-nunito select-none">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-[#131F24] text-[#4B4B4B] dark:text-[#E5E5E5] font-nunito select-none transition-colors">
       {/* Out of Hearts Modal if hearts hits 0 */}
       <OutOfHeartsModal isOpen={hearts <= 0} />
 
@@ -96,13 +98,13 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
       <div className="w-full max-w-4xl mx-auto px-6 py-6 flex items-center justify-between gap-4">
         <button
           onClick={onExit}
-          className="text-[#afafaf] hover:text-[#4B4B4B] transition-colors p-2"
+          className="text-[#afafaf] hover:text-[#4B4B4B] dark:hover:text-white transition-colors p-2 cursor-pointer"
           aria-label="Exit lesson"
         >
           <X size={28} strokeWidth={3} />
         </button>
 
-        <div className="flex-1 h-4 bg-[#e5e5e5] rounded-full overflow-hidden relative">
+        <div className="flex-1 h-4 bg-[#e5e5e5] dark:bg-[#2B3E48] rounded-full overflow-hidden relative">
           <div
             className="h-full bg-[#58CC02] rounded-full transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
@@ -118,7 +120,7 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
       {/* Main Exercise Area */}
       <main className="flex-1 w-full max-w-2xl mx-auto px-6 flex flex-col justify-center py-6">
         {/* Prompt */}
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#4B4B4B] mb-6">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#4B4B4B] dark:text-white mb-6">
           {isReview && <span className="text-[#1CB0F6]">Give it a try: </span>}
           {exercise.prompt}
         </h1>
@@ -127,12 +129,12 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => handleSpeak(exercise.question)}
-            className="w-12 h-12 rounded-2xl bg-[#1CB0F6] text-white flex items-center justify-center shadow-[0_4px_0_#1899D6] hover:bg-[#1899D6] active:translate-y-1 active:shadow-none transition-all flex-shrink-0"
+            className="w-12 h-12 rounded-2xl bg-[#1CB0F6] text-white flex items-center justify-center shadow-[0_4px_0_#1899D6] hover:bg-[#1899D6] active:translate-y-1 active:shadow-none transition-all flex-shrink-0 cursor-pointer"
             aria-label="Listen to prompt"
           >
             <Volume2 size={24} />
           </button>
-          <div className="relative border-2 border-[#e5e5e5] rounded-2xl px-5 py-3 text-xl font-bold text-[#4B4B4B] bg-white shadow-sm flex items-center">
+          <div className="relative border-2 border-[#e5e5e5] dark:border-[#263E4B] rounded-2xl px-5 py-3 text-xl font-bold text-[#4B4B4B] dark:text-white bg-white dark:bg-[#18272E] shadow-sm flex items-center">
             {exercise.question}
           </div>
         </div>
@@ -155,7 +157,7 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
             }}
             placeholder="Type your answer in German"
             disabled={status !== "idle" || hearts <= 0}
-            className="w-full border-2 border-[#e5e5e5] bg-gray-50 focus:border-[#1CB0F6] focus:bg-white focus:outline-none rounded-2xl p-4 text-xl font-bold text-[#4B4B4B] transition-all"
+            className="w-full border-2 border-[#e5e5e5] dark:border-[#263E4B] bg-gray-50 dark:bg-[#18272E] focus:border-[#1CB0F6] focus:bg-white dark:focus:bg-[#202F36] focus:outline-none rounded-2xl p-4 text-xl font-bold text-[#4B4B4B] dark:text-white transition-all"
             autoComplete="off"
             autoFocus
           />
@@ -166,10 +168,10 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
       <footer
         className={`w-full border-t-2 py-6 px-6 transition-colors duration-200 ${
           status === "idle"
-            ? "border-[#e5e5e5] bg-white"
+            ? "border-[#e5e5e5] dark:border-[#263E4B] bg-white dark:bg-[#131F24]"
             : status === "correct"
-            ? "border-transparent bg-[#d7ffb8]"
-            : "border-transparent bg-[#ffdfe0]"
+            ? "border-transparent bg-[#d7ffb8] dark:bg-[#1A3826]"
+            : "border-transparent bg-[#ffdfe0] dark:bg-[#3D1E24]"
         }`}
       >
         <div className="max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-4">
@@ -177,8 +179,14 @@ export const TypeAnswerExercise: React.FC<TypeAnswerExerciseProps> = ({
             <>
               <button
                 type="button"
-                onClick={handleSkip}
-                className="text-[#afafaf] font-black uppercase text-sm tracking-wider hover:text-[#777] transition-colors cursor-pointer"
+                disabled={!canSkip}
+                onClick={canSkip ? handleSkip : undefined}
+                className={`font-black uppercase text-sm tracking-wider transition-colors ${
+                  !canSkip
+                    ? "text-gray-300 dark:text-[#3B4D54] cursor-not-allowed opacity-40 select-none"
+                    : "text-[#afafaf] dark:text-[#8FA2AC] hover:text-[#777] dark:hover:text-white cursor-pointer"
+                }`}
+                title={!canSkip ? "Questions cannot be skipped again" : undefined}
               >
                 Skip
               </button>

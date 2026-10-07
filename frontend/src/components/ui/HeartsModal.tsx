@@ -79,7 +79,7 @@ export const HeartsModal: React.FC<HeartsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn select-none font-nunito">
-      <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center border-2 border-[#e5e5e5] shadow-2xl animate-scaleUp flex flex-col items-center">
+      <div className="bg-white dark:bg-[#131F24] rounded-3xl max-w-sm w-full p-6 text-center border-2 border-[#e5e5e5] dark:border-[#263E4B] text-[#4B4B4B] dark:text-[#E5E5E5] shadow-2xl animate-scaleUp flex flex-col items-center">
         {/* CASE A: User actually has 0 hearts (Out of Hearts Screen) */}
         {isOutOfHearts ? (
           <>
@@ -107,20 +107,20 @@ export const HeartsModal: React.FC<HeartsModalProps> = ({
               </svg>
             </div>
 
-            <h2 className="text-2xl font-black text-[#4B4B4B] mb-2 leading-tight">
+            <h2 className="text-2xl font-black text-[#4B4B4B] dark:text-white mb-2 leading-tight">
               You are out of hearts!
             </h2>
-            <p className="text-sm font-bold text-[#777777] mb-6">
+            <p className="text-sm font-bold text-[#777777] dark:text-[#93A4AC] mb-6">
               Refill your hearts now to continue learning, or wait 10 mins for them to recharge.
             </p>
           </>
         ) : (
           /* CASE B: User clicked Hearts icon while hearts > 0 (Requirement 2: Hearts status breakdown) */
           <>
-            <h2 className="text-2xl font-black text-[#4B4B4B] mb-2 leading-tight">
+            <h2 className="text-2xl font-black text-[#4B4B4B] dark:text-white mb-2 leading-tight">
               Hearts
             </h2>
-            <p className="text-xs font-bold text-[#777777] mb-6">
+            <p className="text-xs font-bold text-[#777777] dark:text-[#93A4AC] mb-6">
               You lose hearts by making mistakes. Keep practicing!
             </p>
 

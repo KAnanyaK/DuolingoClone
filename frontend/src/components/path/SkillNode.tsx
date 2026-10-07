@@ -110,22 +110,25 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
 
       {/* Node Container with optional SVG Progress Ring */}
       <div className="relative w-28 h-28 flex items-center justify-center">
-        {/* SVG Progress Ring (for Active Skill) */}
-        {isActive && (
+        {/* SVG Progress / Completion Ring (for Active and Completed Skills) */}
+        {(isActive || isCompleted) && (
           <svg
             className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none"
             viewBox="0 0 112 112"
           >
-            {/* Background tracking track */}
-            <circle
-              cx="56"
-              cy="56"
-              r={radius}
-              stroke="#e5e5e5"
-              strokeWidth="7"
-              fill="transparent"
-            />
-            {/* Active animated stroke progress */}
+            {/* Background tracking track (only for active skill when progress < 100%) */}
+            {isActive && (
+              <circle
+                cx="56"
+                cy="56"
+                r={radius}
+                stroke="#e5e5e5"
+                strokeWidth="7"
+                fill="transparent"
+                className="stroke-[#e5e5e5] dark:stroke-[#2B3E48]"
+              />
+            )}
+            {/* Full Green Ring for completed skills, or animated progress ring for active */}
             <circle
               cx="56"
               cy="56"
@@ -134,7 +137,7 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
               strokeWidth="7"
               fill="transparent"
               strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
+              strokeDashoffset={isCompleted ? 0 : strokeDashoffset}
               strokeLinecap="round"
               className="transition-all duration-700 ease-out"
             />

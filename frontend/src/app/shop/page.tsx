@@ -4,11 +4,19 @@ import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useUserStore } from "@/store/useUserStore";
 import { SuperBanner } from "@/components/ui/SuperBanner";
-import { SuperSidebarCard } from "@/components/ui/SuperSidebarCard";
 import { SuperModal } from "@/components/ui/SuperModal";
+import { StreakFreezeIcon } from "@/components/ui/StreakFreezeIcon";
 
 export default function ShopPage() {
-  const { hearts, gems, refillHearts, setStats } = useUserStore();
+  const {
+    hearts,
+    gems,
+    refillHearts,
+    setStats,
+    streakFreezeActive,
+    equipStreakFreeze,
+    unequipStreakFreeze,
+  } = useUserStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuperModalOpen, setIsSuperModalOpen] = useState(false);
@@ -57,9 +65,9 @@ export default function ShopPage() {
 
   return (
     <AppLayout showTopBar={true}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-nunito select-none flex flex-col lg:flex-row gap-8 justify-center items-start">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-nunito select-none flex flex-col gap-8 justify-center items-center">
         {/* Main Shop Column */}
-        <div className="flex-1 max-w-2xl w-full">
+        <div className="w-full">
           {errorMessage && (
             <div className="mb-6 p-4 rounded-2xl bg-[#FF4B4B]/10 border-2 border-[#FF4B4B] text-[#FF4B4B] font-bold text-sm text-center">
               {errorMessage}
@@ -191,27 +199,9 @@ export default function ShopPage() {
             {/* Streak Freeze */}
             <div className="py-6 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 sm:gap-5 flex-1">
-                {/* Ice Crystal Mascot Badge from screenshot */}
+                {/* Ice Crystal Mascot Badge using StreakFreezeIcon */}
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <svg viewBox="0 0 100 100" className="w-full h-full filter drop-shadow-sm" fill="none">
-                    {/* Jagged Ice Block */}
-                    <path
-                      d="M50 10L74 26L86 52L72 82L50 90L28 82L14 52L26 26Z"
-                      fill="#7BE2FF"
-                    />
-                    <path
-                      d="M50 18L68 30L78 52L66 76L50 82L34 76L22 52L32 30Z"
-                      fill="#36C5F0"
-                    />
-                    {/* Deep Blue Water Drop Core */}
-                    <path
-                      d="M50 36C50 36 60 48 60 56C60 62 55 67 50 67C45 67 40 62 40 56C40 48 50 36 50 36Z"
-                      fill="#0D86CA"
-                    />
-                    {/* Sparkle Ice Glints */}
-                    <polygon points="26,38 30,42 26,46 22,42" fill="#FFFFFF" opacity="0.9" />
-                    <polygon points="70,62 74,65 70,68 66,65" fill="#FFFFFF" opacity="0.9" />
-                  </svg>
+                  <StreakFreezeIcon width={64} height={64} className="filter drop-shadow-sm" />
                 </div>
 
                 <div className="flex flex-col">
@@ -219,8 +209,14 @@ export default function ShopPage() {
                     <h3 className="text-lg sm:text-xl font-black text-[#4B4B4B] dark:text-white leading-tight">
                       Streak Freeze
                     </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#D7FFB8] text-[#58CC02] font-black text-[11px] tracking-wide uppercase">
-                      2 / 2 EQUIPPED
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full font-black text-[11px] tracking-wide uppercase ${
+                        streakFreezeActive
+                          ? "bg-[#D7FFB8] text-[#58CC02]"
+                          : "bg-gray-100 dark:bg-[#202F36] text-[#AFAFAF] dark:text-[#6A7E88]"
+                      }`}
+                    >
+                      {streakFreezeActive ? "1 / 1 EQUIPPED" : "0 / 1 EQUIPPED"}
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC] leading-snug">
@@ -229,15 +225,40 @@ export default function ShopPage() {
                 </div>
               </div>
 
-              {/* Action Button: EQUIPPED */}
-              <div className="flex-shrink-0">
-                <button
-                  disabled
-                  type="button"
-                  className="px-6 sm:px-8 py-3 rounded-2xl border-2 border-[#E5E5E5] dark:border-[#37464F] bg-transparent text-[#AFAFAF] dark:text-[#58646D] font-black text-xs sm:text-sm uppercase tracking-wider cursor-not-allowed select-none"
-                >
-                  EQUIPPED
-                </button>
+              {/* Action Buttons: Equip (100 Gems) / Equipped / [Demo] Unequip */}
+              <div className="flex-shrink-0 flex items-center gap-2">
+                {!streakFreezeActive ? (
+                  <button
+                    type="button"
+                    disabled={gems < 100}
+                    onClick={() => equipStreakFreeze()}
+                    className={`px-5 sm:px-7 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all select-none ${
+                      gems >= 100
+                        ? "bg-[#1CB0F6] border-b-4 border-[#1899D6] hover:bg-[#1899D6] active:translate-y-1 active:border-b-0 text-white cursor-pointer shadow-sm"
+                        : "border-2 border-[#E5E5E5] dark:border-[#37464F] bg-gray-100 dark:bg-[#202F36] text-[#AFAFAF] dark:text-[#58646D] cursor-not-allowed"
+                    }`}
+                  >
+                    EQUIP (100 💎)
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled
+                      type="button"
+                      className="px-6 sm:px-8 py-3 rounded-2xl border-2 border-[#E5E5E5] dark:border-[#37464F] bg-transparent text-[#AFAFAF] dark:text-[#58646D] font-black text-xs sm:text-sm uppercase tracking-wider cursor-not-allowed select-none"
+                    >
+                      EQUIPPED
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => unequipStreakFreeze()}
+                      className="px-3 py-2 text-xs font-bold text-[#777777] dark:text-[#93A4AC] hover:text-[#FF4B4B] dark:hover:text-[#FF4B4B] underline transition-all cursor-pointer select-none"
+                      title="Demo: Unequip and refund 100 gems"
+                    >
+                      [Demo] Unequip
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -325,11 +346,6 @@ export default function ShopPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Right Sidebar on Desktop */}
-      <div className="hidden lg:flex w-72 lg:w-80 flex-col gap-4 flex-shrink-0 sticky top-6">
-        <SuperSidebarCard onUpgradeClick={() => setIsSuperModalOpen(true)} />
       </div>
     </div>
 

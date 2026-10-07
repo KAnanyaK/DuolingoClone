@@ -135,7 +135,17 @@ def seed():
                     correct_answer="1",
                     order=2
                 ),
-                # 3. Match Pairs
+                # 3. Pronunciation (Placeholder activity)
+                Exercise(
+                    lesson_id=lesson.id,
+                    type="pronunciation",
+                    prompt="Say Guten Morgen",
+                    target_sentence="Guten Morgen",
+                    options=json.dumps({"target_text": "Guten Morgen", "translation": "Good morning", "phonetic": "ˈɡuːtn̩ ˈmɔʁɡn̩"}),
+                    correct_answer="Guten Morgen",
+                    order=3
+                ),
+                # 4. Match Pairs
                 Exercise(
                     lesson_id=lesson.id,
                     type="match_pairs",
@@ -148,9 +158,9 @@ def seed():
                         {"id": 4, "german": "Mann", "english": "Man"},
                     ]),
                     correct_answer="",
-                    order=3
+                    order=4
                 ),
-                # 4. Fill in the Blank
+                # 5. Fill in the Blank
                 Exercise(
                     lesson_id=lesson.id,
                     type="fill_blank",
@@ -158,9 +168,9 @@ def seed():
                     target_sentence="Der ___ frisst den Apfel.",
                     options=json.dumps(["Junge", "Apfel", "Wasser", "Brot"]),
                     correct_answer="Junge",
-                    order=4
+                    order=5
                 ),
-                # 5. Type the Answer
+                # 6. Type the Answer
                 Exercise(
                     lesson_id=lesson.id,
                     type="type_answer",
@@ -168,7 +178,7 @@ def seed():
                     target_sentence="Hello",
                     options=json.dumps([]),
                     correct_answer="Hallo",
-                    order=5
+                    order=6
                 ),
             ]
             db.add_all(exercises)
