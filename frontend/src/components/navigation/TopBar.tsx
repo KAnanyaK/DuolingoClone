@@ -5,6 +5,7 @@ import { useUserStore } from "@/store/useUserStore";
 import { HeartsModal } from "@/components/ui/HeartsModal";
 import { HeartsPopover } from "@/components/ui/HeartsPopover";
 import { StreakPopover } from "@/components/ui/StreakPopover";
+import { GemsPopover } from "@/components/ui/GemsPopover";
 import { CourseSelectorPopover } from "@/components/navigation/CourseSelectorPopover";
 
 export interface TopBarProps {
@@ -31,6 +32,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const [isStreakPopoverOpen, setIsStreakPopoverOpen] = useState(false);
   const [isHeartsPopoverOpen, setIsHeartsPopoverOpen] = useState(false);
+  const [isGemsPopoverOpen, setIsGemsPopoverOpen] = useState(false);
   const [isCoursePopoverOpen, setIsCoursePopoverOpen] = useState(false);
   const [timeLeftText, setTimeLeftText] = useState<string>("Wait to refill in 10 mins");
 
@@ -210,7 +212,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               {/* Tiny luminous inner glimmer */}
               <ellipse cx="49" cy="67" rx="5" ry="6" fill="#FFF275" opacity="0.85" />
             </svg>
-            <span className="text-base sm:text-lg text-[#FF9600] font-black">{streak}</span>
+            <span suppressHydrationWarning className="text-base sm:text-lg text-[#FF9600] font-black">{streak}</span>
           </button>
 
           {/* Floating Streak Popover Dialog */}
@@ -222,40 +224,52 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
 
         {/* Gems Counter - Blue Hexagonal Gem SVG from screenshot */}
-        <div
-          className="flex items-center gap-1.5 font-black text-[#1CB0F6] cursor-pointer hover:opacity-85 transition-opacity"
-          title="Gems count"
-        >
-          {/* Blue Hexagonal Gem Symbol */}
-          <svg
-            className="w-7 h-7 filter drop-shadow-sm"
-            viewBox="0 0 100 100"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsGemsPopoverOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 font-black text-[#1CB0F6] cursor-pointer hover:opacity-85 active:scale-95 transition-all p-1 rounded-2xl"
+            title="Gems count"
+            aria-label="Gems details"
           >
-            {/* White outline padding */}
-            <polygon
-              points="50,6 88,26 88,74 50,94 12,74 12,26"
-              fill="#FFFFFF"
-              stroke="#FFFFFF"
-              strokeWidth="6"
-              strokeLinejoin="round"
-            />
-            {/* Main hexagonal deep sky blue body */}
-            <polygon
-              points="50,10 84,28 84,72 50,90 16,72 16,28"
-              fill="#1CB0F6"
-            />
-            {/* Upper light shine reflection polygon */}
-            <polygon
-              points="50,14 78,30 50,46 22,30"
-              fill="#52C9FF"
-              opacity="0.9"
-            />
-            {/* Glossy top-left highlight dot */}
-            <circle cx="34" cy="32" r="5" fill="#FFFFFF" opacity="0.95" />
-          </svg>
-          <span className="text-base sm:text-lg text-[#1CB0F6] font-black">{gems}</span>
+            {/* Blue Hexagonal Gem Symbol */}
+            <svg
+              className="w-7 h-7 filter drop-shadow-sm"
+              viewBox="0 0 100 100"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* White outline padding */}
+              <polygon
+                points="50,6 88,26 88,74 50,94 12,74 12,26"
+                fill="#FFFFFF"
+                stroke="#FFFFFF"
+                strokeWidth="6"
+                strokeLinejoin="round"
+              />
+              {/* Main hexagonal deep sky blue body */}
+              <polygon
+                points="50,10 84,28 84,72 50,90 16,72 16,28"
+                fill="#1CB0F6"
+              />
+              {/* Upper light shine reflection polygon */}
+              <polygon
+                points="50,14 78,30 50,46 22,30"
+                fill="#52C9FF"
+                opacity="0.9"
+              />
+              {/* Glossy top-left highlight dot */}
+              <circle cx="34" cy="32" r="5" fill="#FFFFFF" opacity="0.95" />
+            </svg>
+            <span className="text-base sm:text-lg text-[#1CB0F6] font-black">{gems}</span>
+          </button>
+
+          {/* Floating Gems Popover Dialog */}
+          <GemsPopover
+            isOpen={isGemsPopoverOpen}
+            onClose={() => setIsGemsPopoverOpen(false)}
+            gemsCount={gems}
+          />
         </div>
 
         {/* XP - Green Power lightning bolt with crisp white border */}

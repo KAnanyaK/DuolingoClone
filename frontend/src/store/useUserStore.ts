@@ -123,7 +123,7 @@ export const useUserStore = create<UserState>((set) => ({
   hearts: 5,
   maxHearts: 5,
   xp: 50, // 5 completed lessons * 10 XP
-  streak: getStoredStreak(),
+  streak: 1,
   gems: 500,
   isHeartsModalOpen: false,
   heartsCooldownEndTime: null,

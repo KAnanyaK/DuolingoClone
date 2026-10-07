@@ -88,7 +88,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
   }, []); // Empty dependency array: strictly once on mount
 
   const handleContinue = () => {
-    router.push("/");
+    router.push("/learn");
   };
 
   return (

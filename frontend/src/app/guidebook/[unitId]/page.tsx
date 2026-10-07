@@ -61,7 +61,7 @@ export default function GuidebookPage({ params }: GuidebookPageProps) {
           {/* Top Back Navigation Button */}
           <div className="pb-4 mb-4 border-b border-[#E5E5E5] dark:border-[#202F36]">
             <Link
-              href="/"
+              href="/learn"
               className="inline-flex items-center gap-2 text-[#777777] dark:text-[#93A4AC] hover:text-[#4B4B4B] dark:hover:text-white font-black text-sm uppercase tracking-wider transition-colors cursor-pointer group"
             >
               <ArrowLeft className="w-5 h-5 stroke-[2.5] group-hover:-translate-x-1 transition-transform" />

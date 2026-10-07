@@ -210,7 +210,7 @@ function LessonContent() {
 
   const handleEndSession = () => {
     setIsExitModalOpen(false);
-    router.push("/");
+    router.push("/learn");
   };
 
   const commonProps = {

@@ -73,7 +73,7 @@ export const HeartsModal: React.FC<HeartsModalProps> = ({
     }
     onClose();
     if (isInLesson && isOutOfHearts) {
-      router.push("/");
+      router.push("/learn");
     }
   };
 

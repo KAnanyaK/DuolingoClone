@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useUserStore } from "@/store/useUserStore";
-import { Sun, Moon, Flame, Zap, Heart, Gem, ShieldCheck, Check } from "lucide-react";
+import { Sun, Moon, Flame, Zap, Heart, Gem, ShieldCheck, Check, Trophy } from "lucide-react";
 
 export default function ProfilePage() {
   const { xp, streak, hearts, gems, darkMode, toggleDarkMode } = useUserStore();
@@ -135,6 +135,239 @@ export default function ProfilePage() {
                 <span>Dark</span>
                 {isDark && <Check className="w-3.5 h-3.5 text-[#58CC02]" />}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION: ALL ACHIEVEMENTS */}
+        <div className="flex flex-col gap-4">
+          <h2 className="text-2xl font-black text-[#4B4B4B] dark:text-white">
+            All achievements
+          </h2>
+
+          <div className="rounded-3xl border-2 border-[#e5e5e5] dark:border-[#263E4B] bg-white dark:bg-[#1A2C34] overflow-hidden divide-y-2 divide-[#f2f2f2] dark:divide-[#263E4B] shadow-sm">
+            {/* 1. Wildfire */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#FF4B4B] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center">
+                  <Flame className="w-9 h-9 sm:w-10 sm:h-10 fill-[#FFC800] text-[#FFC800] drop-shadow-xs" />
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Wildfire
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    1/3
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "33%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Reach a 3 day streak
+                </p>
+              </div>
+            </div>
+
+            {/* 2. Sage */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#58CC02] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center text-3xl sm:text-4xl select-none">
+                  🧙‍♂️
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Sage
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    5/100
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "5%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Earn 100 XP
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Champion */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#B86BFF] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center text-3xl sm:text-4xl select-none">
+                  🛡️
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Champion
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    0/1
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Unlock Leaderboards by completing 10 lessons
+                </p>
+              </div>
+            </div>
+
+            {/* 4. Sharpshooter */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#58CC02] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center text-3xl sm:text-4xl select-none">
+                  🏹
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Sharpshooter
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    0/1
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Complete 1 lesson with no mistakes
+                </p>
+              </div>
+            </div>
+
+            {/* 5. Winner */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#B86BFF] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center">
+                  <Trophy className="w-9 h-9 sm:w-10 sm:h-10 fill-[#FFC800] text-[#FFC800] drop-shadow-xs" />
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Winner
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    0/1
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Finish #1 in the leaderboard
+                </p>
+              </div>
+            </div>
+
+            {/* 6. Friendly */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#B86BFF] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center text-3xl sm:text-4xl select-none">
+                  🧑‍🤝‍🧑
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Friendly
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    0/3
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Follow 3 friends
+                </p>
+              </div>
+            </div>
+
+            {/* 7. Weekend Warrior */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#58CC02] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center text-3xl sm:text-4xl select-none">
+                  🪖
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Weekend Warrior
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    0/2
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Complete a lesson on Saturday and Sunday
+                </p>
+              </div>
+            </div>
+
+            {/* 8. Photogenic */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="w-[84px] h-[92px] sm:w-[92px] sm:h-[100px] rounded-2xl bg-[#1CB0F6] p-2 flex flex-col items-center justify-between shadow-xs flex-shrink-0">
+                <div className="flex-1 flex items-center justify-center text-3xl sm:text-4xl select-none">
+                  🖼️
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white bg-black/20 px-2 py-0.5 rounded-md whitespace-nowrap text-center">
+                  LEVEL 1
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <h3 className="font-black text-base sm:text-lg text-[#4B4B4B] dark:text-white">
+                    Photogenic
+                  </h3>
+                  <span className="font-extrabold text-xs sm:text-sm text-[#AFAFAF] dark:text-[#8898A1]">
+                    0/1
+                  </span>
+                </div>
+                <div className="w-full h-4 bg-[#E5E5E5] dark:bg-[#2B3E48] rounded-full overflow-hidden p-0.5 mb-2">
+                  <div className="h-full bg-[#FFC800] rounded-full" style={{ width: "0%" }} />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-[#777777] dark:text-[#93A4AC]">
+                  Add a profile picture
+                </p>
+              </div>
             </div>
           </div>
         </div>

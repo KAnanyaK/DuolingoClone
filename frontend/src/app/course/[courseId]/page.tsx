@@ -205,7 +205,7 @@ export default function CourseComingSoonPage({ params }: CoursePageProps) {
 
             {/* Action Return Button */}
             <Link
-              href="/"
+              href="/learn"
               className="w-full inline-flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-[#58CC02] hover:bg-[#46a302] active:translate-y-1 text-white font-black uppercase tracking-wider text-base border-b-4 border-b-[#46a302] shadow-md transition-all cursor-pointer"
             >
               <ArrowLeft className="w-5 h-5 stroke-[3]" />
