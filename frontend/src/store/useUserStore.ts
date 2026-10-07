@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { API_BASE_URL } from "@/config/api";
 
 export interface UserState {
   hearts: number;
@@ -232,7 +233,7 @@ export const useUserStore = create<UserState>((set) => ({
   },
   equipStreakFreeze: async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/users/1/equip-freeze", {
+      const res = await fetch(`${API_BASE_URL}/api/users/1/equip-freeze`, {
         method: "POST",
       });
       if (!res.ok) {
@@ -256,7 +257,7 @@ export const useUserStore = create<UserState>((set) => ({
   },
   unequipStreakFreeze: async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/users/1/unequip-freeze", {
+      const res = await fetch(`${API_BASE_URL}/api/users/1/unequip-freeze`, {
         method: "POST",
       });
       if (!res.ok) {
@@ -325,7 +326,7 @@ export const useUserStore = create<UserState>((set) => ({
       }
 
       // Sync hearts change to backend asynchronously
-      fetch("http://localhost:8000/api/users/1/sync-hearts", {
+      fetch(`${API_BASE_URL}/api/users/1/sync-hearts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hearts: nextHearts }),

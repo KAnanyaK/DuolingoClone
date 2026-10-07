@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
 import { Flame, Zap } from "lucide-react";
+import { API_BASE_URL } from "@/config/api";
 
 export interface LessonCompleteProps {
   xpGained?: number;
@@ -43,7 +44,7 @@ export const LessonComplete: React.FC<LessonCompleteProps> = ({
     }
 
     // Persist progress to SQLite database backend
-    fetch("http://localhost:8000/api/users/1/progress", {
+    fetch(`${API_BASE_URL}/api/users/1/progress`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

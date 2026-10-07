@@ -9,6 +9,7 @@ import { GemsPopover } from "@/components/ui/GemsPopover";
 import { XpPopover } from "@/components/ui/XpPopover";
 import { CourseSelectorPopover } from "@/components/navigation/CourseSelectorPopover";
 import { StreakFreezeIcon } from "@/components/ui/StreakFreezeIcon";
+import { API_BASE_URL } from "@/config/api";
 
 export interface TopBarProps {
   className?: string;
@@ -54,7 +55,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       }
     }
 
-    fetch("http://localhost:8000/api/users/1")
+    fetch(`${API_BASE_URL}/api/users/1`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load user state");
         return res.json();
@@ -134,7 +135,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         // Cooldown reached 0! Refill hearts to 5
         localStorage.removeItem("duo_hearts_cooldown");
         localStorage.setItem("duo_hearts_count", "5");
-        fetch("http://localhost:8000/api/users/1/refill-hearts", { method: "POST" })
+        fetch(`${API_BASE_URL}/api/users/1/refill-hearts`, { method: "POST" })
           .catch(() => {});
         refillHearts();
       } else {

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/store/useUserStore";
+import { API_BASE_URL } from "@/config/api";
 
 export interface HeartsModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export const HeartsModal: React.FC<HeartsModalProps> = ({
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    fetch("http://localhost:8000/api/users/1/refill-hearts", {
+    fetch(`${API_BASE_URL}/api/users/1/refill-hearts`, {
       method: "POST",
     })
       .then((res) => {

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { API_BASE_URL } from "@/config/api";
 import { Flame, Zap, Trophy, Medal, Shield, ChevronUp } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
 import { LeaderboardHeroGraphic } from "@/components/leaderboard/LeaderboardHeroGraphic";
@@ -24,7 +25,7 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/leaderboard")
+    fetch(`${API_BASE_URL}/api/leaderboard`)
       .then((res) => {
         if (!res.ok) throw new Error("Leaderboard API failed");
         return res.json();

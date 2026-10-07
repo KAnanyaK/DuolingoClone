@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useUserStore } from "@/store/useUserStore";
+import { API_BASE_URL } from "@/config/api";
 import { SuperBanner } from "@/components/ui/SuperBanner";
 import { SuperModal } from "@/components/ui/SuperModal";
 import { StreakFreezeIcon } from "@/components/ui/StreakFreezeIcon";
@@ -34,7 +35,7 @@ export default function ShopPage() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    fetch("http://localhost:8000/api/users/1/refill-hearts", {
+    fetch(`${API_BASE_URL}/api/users/1/refill-hearts`, {
       method: "POST",
     })
       .then((res) => {

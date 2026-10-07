@@ -25,6 +25,7 @@ import {
 } from "@/components/exercise/PronunciationExercise";
 import { LessonComplete } from "@/components/exercise/LessonComplete";
 import { ExitConfirmationModal } from "@/components/exercise/ExitConfirmationModal";
+import { API_BASE_URL } from "@/config/api";
 
 type ExerciseUnion = (
   | ({ type: "translate" } & TranslateExerciseData)
@@ -83,7 +84,7 @@ function LessonContent() {
         localStorage.setItem(`duo_skill_exercise_idx_${skillId}`, payload.current_index.toString());
       }
     }
-    fetch(`http://localhost:8000/api/skills/${skillId}/session`, {
+    fetch(`${API_BASE_URL}/api/skills/${skillId}/session`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -92,7 +93,7 @@ function LessonContent() {
 
   // 1. Fetch backend exercise session on mount (seamlessly resumes active in-flight session)
   useEffect(() => {
-    fetch(`http://localhost:8000/api/skills/${skillId}/session`)
+    fetch(`${API_BASE_URL}/api/skills/${skillId}/session`)
       .then((res) => {
         if (!res.ok) throw new Error("API error");
         return res.json();
@@ -352,7 +353,7 @@ function LessonContent() {
       localStorage.removeItem(`duo_skill_progress_${skillId}`);
       localStorage.removeItem(`duo_skill_exercise_idx_${skillId}`);
     }
-    fetch(`http://localhost:8000/api/skills/${skillId}/session`, { method: "DELETE" }).catch(() => {});
+    fetch(`${API_BASE_URL}/api/skills/${skillId}/session`, { method: "DELETE" }).catch(() => {});
     return <LessonComplete xpGained={10} completedLessonId={skillId} skillId={skillId} />;
   }
 

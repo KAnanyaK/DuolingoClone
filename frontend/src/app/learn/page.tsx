@@ -12,6 +12,7 @@ import { PainterMascot } from "@/components/mascots/PainterMascot";
 import { SuperSidebarCard } from "@/components/ui/SuperSidebarCard";
 import { SuperModal } from "@/components/ui/SuperModal";
 import { DailyGoalWidget } from "@/components/ui/DailyGoalWidget";
+import { API_BASE_URL } from "@/config/api";
 
 interface SkillItem {
   id: number;
@@ -61,7 +62,7 @@ export default function LearnPage() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/courses/1/path", { cache: "no-store" })
+    fetch(`${API_BASE_URL}/api/courses/1/path`, { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch path data");
         return res.json();
